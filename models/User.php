@@ -34,12 +34,12 @@ class User {
     }
     
     // Login user
-    public function login($username, $password) {
+    public function login($email, $password) {
         // Prepare query
-        $this->db->query('SELECT * FROM users WHERE username = :username AND status = "active"');
+        $this->db->query('SELECT * FROM users WHERE email = :email AND status = "active"');
         
         // Bind value
-        $this->db->bind(':username', $username);
+        $this->db->bind(':email', $email);
         
         // Get single record
         $user = $this->db->single();

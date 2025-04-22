@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/config.php';
 require_once 'config/Database.php';
@@ -11,19 +10,19 @@ if(isLoggedIn()) {
 }
 
 // Initialize variables
-$username = '';
+$email = '';
 $password = '';
-$username_err = '';
+$email_err = '';
 $password_err = '';
 $login_err = '';
 
 // Process form data when form is submitted
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Check if username is empty
-    if(empty(trim($_POST['username']))) {
-        $username_err = 'Please enter username.';
+    // Check if email is empty
+    if(empty(trim($_POST['email']))) {
+        $email_err = 'Please enter email.';
     } else {
-        $username = trim($_POST['username']);
+        $email = trim($_POST['email']);
     }
     
     // Check if password is empty
@@ -34,12 +33,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     // Validate credentials
-    if(empty($username_err) && empty($password_err)) {
+    if(empty($email_err) && empty($password_err)) {
         // Create user object
         $user = new User();
         
         // Attempt to login
-        $loggedInUser = $user->login($username, $password);
+        $loggedInUser = $user->login($email, $password);
         
         if($loggedInUser) {
             // Password is correct, start a new session
@@ -55,7 +54,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             redirect('index.php');
         } else {
             // Display an error message if password is not valid
-            $login_err = 'Invalid username or password.';
+            $login_err = 'Invalid email or password.';
         }
     }
 }
@@ -86,10 +85,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
                     <div class="form-group">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" name="username" id="username" class="form-control <?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $username; ?>">
-                        <?php if(!empty($username_err)) : ?>
-                            <div class="form-text text-danger"><?php echo $username_err; ?></div>
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" name="email" id="email" class="form-control <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $email; ?>">
+                        <?php if(!empty($email_err)) : ?>
+                            <div class="form-text text-danger"><?php echo $email_err; ?></div>
                         <?php endif; ?>
                     </div>
                     
@@ -107,7 +106,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </form>
                 
                 <div class="mt-3 text-center">
-                    <p class="text-muted">Use admin / admin123 for demo</p>
+                    <p class="text-muted">Use john@example.com / admin123 for demo</p>
                 </div>
             </div>
         </div>
