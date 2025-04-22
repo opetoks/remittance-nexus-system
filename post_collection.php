@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/config.php';
 require_once 'config/Database.php';
@@ -166,7 +165,13 @@ if ($remittance) {
     
     $pendingAmount = $remittance['amount_paid'] - $postedAmount;
 }
+
+// Get current time in Lagos timezone
+$current_time = new DateTime('now', new DateTimeZone('Africa/Lagos'));
+$cutoff_time = new DateTime('18:30', new DateTimeZone('Africa/Lagos'));
+$is_after_cutoff = $current_time > $cutoff_time;
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -297,6 +302,15 @@ if ($remittance) {
                     </div>
                 <?php endif; ?>
                 
+                <?php if($is_after_cutoff): ?>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-clock"></i> Note: It's past 6:30 PM. New transactions must be recorded as unposted.
+                        <a href="unposted_transactions.php" class="btn btn-warning btn-sm ml-3">
+                            <i class="fas fa-receipt"></i> Record Unposted Transaction
+                        </a>
+                    </div>
+                <?php endif; ?>
+                
                 <!-- Select Remittance Section -->
                 <?php if(empty($remittance)): ?>
                     <div class="card">
@@ -421,7 +435,7 @@ if ($remittance) {
                     </div>
                     
                     <!-- Post Transaction Form -->
-                    <?php if($pendingReceipts > 0): ?>
+                    <?php if($pendingReceipts > 0 && !$is_after_cutoff): ?>
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title">Post Transaction</h5>
@@ -579,6 +593,20 @@ if ($remittance) {
                                         </button>
                                     </div>
                                 </form>
+                            </div>
+                        </div>
+                    <?php elseif($pendingReceipts > 0): ?>
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Post Transaction</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> It's past 6:30 PM. Please use the unposted transactions page to record any remaining transactions.
+                                    <a href="unposted_transactions.php" class="btn btn-primary btn-sm ml-3">
+                                        <i class="fas fa-receipt"></i> Go to Unposted Transactions
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     <?php endif; ?>

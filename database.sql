@@ -1,4 +1,3 @@
-
 -- Create database
 CREATE DATABASE IF NOT EXISTS income_erp;
 USE income_erp;
@@ -180,3 +179,27 @@ VALUES
 ('4009', 'DTA-001', 'revenue', 'Income', 'Operating Income', 'Daily Trade Arrears', 'Trade Arrears', 'income_trade_arrears', TRUE),
 ('4010', 'SHR-001', 'revenue', 'Income', 'Operating Income', 'Shop Rent', 'Shop Rent', 'income_shop_rent', TRUE),
 ('4011', 'SVC-001', 'revenue', 'Income', 'Operating Income', 'Service Charge', 'Service Charge', 'income_service_charge', TRUE);
+
+-- Unposted Transactions table
+CREATE TABLE unposted_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    remit_id VARCHAR(20) NOT NULL,
+    trans_id VARCHAR(50),
+    shop_id VARCHAR(50),
+    shop_no VARCHAR(50),
+    customer_name VARCHAR(100),
+    date_of_payment DATE NOT NULL,
+    transaction_desc TEXT,
+    amount_paid DECIMAL(10,2) NOT NULL,
+    receipt_no VARCHAR(50),
+    category VARCHAR(50),
+    income_line VARCHAR(50) NOT NULL,
+    posting_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    posting_officer_id INT NOT NULL,
+    posting_officer_name VARCHAR(100) NOT NULL,
+    payment_status ENUM('pending', 'reposted') DEFAULT 'pending',
+    reason TEXT,
+    reposting_time TIMESTAMP NULL,
+    FOREIGN KEY (posting_officer_id) REFERENCES users(id),
+    FOREIGN KEY (remit_id) REFERENCES cash_remittance(remit_id)
+);
