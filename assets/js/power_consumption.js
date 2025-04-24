@@ -43,6 +43,82 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Simulated history data for the last 6 months
+const generateHistoryData = () => {
+    const months = [];
+    const currentDate = new Date();
+    
+    for (let i = 6; i >= 1; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const monthName = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+        
+        // Generate random but realistic-looking data
+        const consumption = (200 + Math.random() * 150).toFixed(2);
+        const cost = (consumption * 280).toFixed(2);
+        const totalPayable = (parseFloat(cost) * 1.075).toFixed(2); // Adding 7.5% VAT
+        const paid = (Math.random() > 0.3 ? parseFloat(totalPayable) : parseFloat(totalPayable) * 0.95).toFixed(2);
+        const balance = (parseFloat(totalPayable) - parseFloat(paid)).toFixed(2);
+        
+        months.push({
+            period: `${monthName} ${year}`,
+            consumption: parseFloat(consumption),
+            cost: parseFloat(cost),
+            totalPayable: parseFloat(totalPayable),
+            paid: parseFloat(paid),
+            balance: parseFloat(balance)
+        });
+    }
+    
+    return months;
+};
+
+// Function to display consumption history
+function displayConsumptionHistory() {
+    const historyCards = document.getElementById('historyCards');
+    historyCards.innerHTML = ''; // Clear existing content
+    
+    const historyData = generateHistoryData();
+    
+    historyData.forEach(month => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        
+        // Create card content
+        card.innerHTML = `
+            <div class="history-card-header">${month.period}</div>
+            <div class="history-card-body">
+                <div class="history-card-row">
+                    <span class="history-card-label">Consumption:</span>
+                    <span class="history-card-value">${month.consumption.toFixed(2)}</span>
+                </div>
+                <div class="history-card-row">
+                    <span class="history-card-label">Cost:</span>
+                    <span class="history-card-value">₦ ${formatCurrency(month.cost)}</span>
+                </div>
+                <div class="history-card-row">
+                    <span class="history-card-label">Total Payable:</span>
+                    <span class="history-card-value">₦ ${formatCurrency(month.totalPayable)}</span>
+                </div>
+                <div class="history-card-row">
+                    <span class="history-card-label">Paid:</span>
+                    <span class="history-card-value">₦ ${formatCurrency(month.paid)}</span>
+                </div>
+                <div class="history-card-row">
+                    <span class="history-card-label">Balance:</span>
+                    <span class="history-card-value ${month.balance < 0 ? 'negative' : 'positive'}">
+                        ₦ ${formatCurrency(month.balance)}
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        historyCards.appendChild(card);
+    });
+    
+    document.getElementById('consumptionHistory').classList.remove('hidden');
+}
+
 // API functions
 async function searchCustomer() {
     const shopNo = document.getElementById('shopNoSearch').value;
@@ -57,7 +133,7 @@ async function searchCustomer() {
 
         if (data.success) {
             displayCustomerDetails(data.customer);
-            fetchConsumptionHistory(data.customer.shop_id);
+            displayConsumptionHistory(); // Add this line to show history when customer is found
         } else {
             alert(data.message);
         }
@@ -94,24 +170,6 @@ function displayCustomerDetails(customer) {
     
     // Store customer data for later use
     window.currentCustomer = customer;
-}
-
-function displayConsumptionHistory(history) {
-    const tableBody = document.getElementById('historyTableBody');
-    tableBody.innerHTML = '';
-    
-    history.forEach(record => {
-        const row = tableBody.insertRow();
-        row.innerHTML = `
-            <td>${record.current_month}</td>
-            <td>${record.previous_reading}</td>
-            <td>${record.present_reading}</td>
-            <td>${record.consumption} KW</td>
-            <td>₦${formatCurrency(record.cost)}</td>
-        `;
-    });
-
-    document.getElementById('consumptionHistory').classList.remove('hidden');
 }
 
 // Calculation functions
