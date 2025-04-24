@@ -24,8 +24,17 @@ if(empty($shop_no)) {
 }
 
 try {
-    // Get customer data
-    $stmt = $db->prepare("SELECT * FROM customers_power_consumption WHERE shop_no = :shop_no");
+    // Get customer data with all details needed for billing
+    $stmt = $db->prepare("SELECT 
+        id, power_id, shop_id, shop_no, customer_name, 
+        old_shop_no, old_customer_name, no_of_users,
+        meter_no, meter_model, tariff, current_month,
+        previous_outstanding, previous_reading, present_reading,
+        consumption, cost, total_payable, total_paid,
+        balance, date_of_reading, type_of_payment,
+        billing_category, bill_status, vat_on_cost
+        FROM customers_power_consumption 
+        WHERE shop_no = :shop_no");
     $stmt->bindParam(':shop_no', $shop_no);
     $stmt->execute();
     
