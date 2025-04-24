@@ -1,4 +1,3 @@
-
 // Configuration
 const API_BASE_URL = 'http://localhost/income_erp/api';
 const VAT_RATE = 0.075; // 7.5%
@@ -18,6 +17,31 @@ const calculateConsumption = (previousReading, presentReading) => {
 const calculateCost = (consumption, tariff) => {
     return consumption * tariff;
 };
+
+// Function to get the previous month and year
+function getPreviousMonthYear() {
+    const currentDate = new Date();
+    // Get the previous month
+    const previousMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    
+    const months = [
+        'January', 'February', 'March', 'April', 'May', 'June', 
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    return `${months[previousMonth.getMonth()]}, ${previousMonth.getFullYear()}`;
+}
+
+// On page load, set the current month
+document.addEventListener('DOMContentLoaded', function() {
+    const currentMonthElements = document.querySelectorAll('#currentMonth');
+    const billingMonth = getPreviousMonthYear();
+    
+    currentMonthElements.forEach(element => {
+        element.textContent = billingMonth;
+        element.value = billingMonth;
+    });
+});
 
 // API functions
 async function searchCustomer() {

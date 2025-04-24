@@ -1,4 +1,3 @@
-
 <?php
 require_once '../config/config.php';
 require_once '../config/Database.php';
@@ -24,7 +23,9 @@ if(empty($shop_no)) {
 }
 
 try {
-    // Get customer data with all details needed for billing
+    // Get current month dynamically
+    $current_month = date('F, Y', strtotime('-1 month'));
+    
     $stmt = $db->prepare("SELECT 
         id, power_id, shop_id, shop_no, customer_name, 
         old_shop_no, old_customer_name, no_of_users,
@@ -34,8 +35,10 @@ try {
         balance, date_of_reading, type_of_payment,
         billing_category, bill_status, vat_on_cost
         FROM customers_power_consumption 
-        WHERE shop_no = :shop_no");
+        WHERE shop_no = :shop_no AND current_month = :current_month");
+    
     $stmt->bindParam(':shop_no', $shop_no);
+    $stmt->bindParam(':current_month', $current_month);
     $stmt->execute();
     
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
