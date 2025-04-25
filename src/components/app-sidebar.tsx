@@ -1,4 +1,8 @@
 
+// This component is being replaced by standard HTML navigation in the HTML files.
+// This file remains to prevent build errors, but its functionality 
+// has been moved to the navbar in the HTML files.
+
 import React from "react";
 import {
   Sidebar,
@@ -12,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { ClipboardCheck, FileCheck, CircleDollarSign, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { ClipboardCheck, FileCheck, CircleDollarSign, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -20,7 +24,7 @@ import { Link } from "react-router-dom";
 const menu = [
   { title: "Dashboard", icon: ClipboardCheck, url: "/" },
   { title: "Verified", icon: FileCheck, url: "#" },
-  { title: "Revenue", icon: CircleDollarSign, url: "/income-summary" },
+  { title: "Revenue", icon: CircleDollarSign, url: "/income_summary.html" },
   { title: "Issues", icon: AlertTriangle, url: "#" },
 ];
 
@@ -43,10 +47,10 @@ export function AppSidebar() {
               {menu.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="text-white hover:bg-white/20">
-                    <Link to={item.url} className="flex items-center gap-2">
+                    <a href={item.url} className="flex items-center gap-2">
                       <item.icon />
                       <span>{item.title}</span>
-                    </Link>
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -58,7 +62,7 @@ export function AppSidebar() {
         <Button
           variant="destructive"
           className="w-full"
-          onClick={logout}
+          onClick={() => window.location.href = '/logout.php'}
         >
           Logout
         </Button>

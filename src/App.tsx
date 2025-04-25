@@ -1,9 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import PowerConsumption from "./pages/PowerConsumption";
-import IncomeSummary from "./pages/IncomeSummary";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -11,10 +7,10 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/power-consumption" element={<PowerConsumption />} />
-          <Route path="/income-summary" element={<IncomeSummary />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<Navigate to="/index.html" />} />
+          <Route path="/power-consumption" element={<Navigate to="/power_consumption.html" />} />
+          <Route path="/income-summary" element={<Navigate to="/income_summary.html" />} />
+          <Route path="*" element={<Navigate to="/index.html" />} />
         </Routes>
       </Router>
     </AuthProvider>
