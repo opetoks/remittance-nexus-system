@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PowerConsumption from "./pages/PowerConsumption";
+import IncomeSummary from "./pages/IncomeSummary";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/power-consumption" element={<PowerConsumption />} />
+          <Route path="/income-summary" element={<IncomeSummary />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

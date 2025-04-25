@@ -15,11 +15,12 @@ import {
 import { ClipboardCheck, FileCheck, CircleDollarSign, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 const menu = [
-  { title: "Dashboard", icon: ClipboardCheck, url: "#" },
+  { title: "Dashboard", icon: ClipboardCheck, url: "/" },
   { title: "Verified", icon: FileCheck, url: "#" },
-  { title: "Revenue", icon: CircleDollarSign, url: "#" },
+  { title: "Revenue", icon: CircleDollarSign, url: "/income-summary" },
   { title: "Issues", icon: AlertTriangle, url: "#" },
 ];
 
@@ -42,10 +43,10 @@ export function AppSidebar() {
               {menu.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="text-white hover:bg-white/20">
-                    <a href={item.url} className="flex items-center gap-2">
+                    <Link to={item.url} className="flex items-center gap-2">
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
