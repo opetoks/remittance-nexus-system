@@ -1,4 +1,3 @@
-
 <?php
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
@@ -107,7 +106,7 @@ function formatCurrency($amount) {
 }
 
 // Format date
-function formatDate($date, $format = 'd-M-Y') {
+function formatDate($date, $format = 'm/d/Y') {
     return date($format, strtotime($date));
 }
 
