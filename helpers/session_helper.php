@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 // print_r($_SESSION);
@@ -142,7 +141,7 @@ function formatCurrency($amount) {
 }
 
 // Format date
-function formatDate($date, $format = 'd-M-Y') {
+function formatDate($date, $format = 'm/d/Y') {
     return date($format, strtotime($date));
 }
 
