@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/Database.php';
 
@@ -134,6 +133,62 @@ class Remittance {
         }
         
         return false;
+    }
+    
+    // Get paginated remittances with search and sort
+    public function getPaginatedRemittances($start, $length, $search, $order_column, $order_dir) {
+        // Base query for total records
+        $baseQuery = 'FROM cash_remittance';
+        $whereClause = '';
+        
+        // Search condition
+        if (!empty($search)) {
+            $whereClause = " WHERE remit_id LIKE :search 
+                            OR remitting_officer_name LIKE :search 
+                            OR posting_officer_name LIKE :search 
+                            OR category LIKE :search";
+        }
+        
+        // Get total records
+        $this->db->query("SELECT COUNT(*) as total " . $baseQuery . $whereClause);
+        if (!empty($search)) {
+            $searchParam = "%{$search}%";
+            $this->db->bind(':search', $searchParam);
+        }
+        $totalRecords = $this->db->single()['total'];
+        
+        // Column mapping for ordering
+        $columns = [
+            0 => 'remit_id',
+            1 => 'date',
+            2 => 'amount_paid',
+            3 => 'no_of_receipts',
+            4 => 'category',
+            5 => 'remitting_officer_name',
+            6 => 'posting_officer_name'
+        ];
+        
+        // Build the main query with pagination and ordering
+        $mainQuery = "SELECT * " . $baseQuery . $whereClause;
+        if (isset($columns[$order_column])) {
+            $mainQuery .= " ORDER BY " . $columns[$order_column] . " " . $order_dir;
+        }
+        $mainQuery .= " LIMIT :start, :length";
+        
+        // Execute main query
+        $this->db->query($mainQuery);
+        if (!empty($search)) {
+            $this->db->bind(':search', $searchParam);
+        }
+        $this->db->bind(':start', (int)$start, PDO::PARAM_INT);
+        $this->db->bind(':length', (int)$length, PDO::PARAM_INT);
+        
+        $results = $this->db->resultSet();
+        
+        return [
+            'data' => $results,
+            'total' => $totalRecords
+        ];
     }
 }
 ?>
