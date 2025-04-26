@@ -150,12 +150,17 @@ class Remittance {
         }
         
         // Get total records
-        $this->db->query("SELECT COUNT(*) as total " . $baseQuery . $whereClause);
-        if (!empty($search)) {
-            $searchParam = "%{$search}%";
-            $this->db->bind(':search', $searchParam);
-        }
+        $this->db->query("SELECT COUNT(*) as total " . $baseQuery);
         $totalRecords = $this->db->single()['total'];
+        
+        // Get filtered records count
+        if (!empty($search)) {
+            $this->db->query("SELECT COUNT(*) as filtered " . $baseQuery . $whereClause);
+            $this->db->bind(':search', "%{$search}%");
+            $filteredRecords = $this->db->single()['filtered'];
+        } else {
+            $filteredRecords = $totalRecords;
+        }
         
         // Column mapping for ordering
         $columns = [
@@ -172,22 +177,25 @@ class Remittance {
         $mainQuery = "SELECT * " . $baseQuery . $whereClause;
         if (isset($columns[$order_column])) {
             $mainQuery .= " ORDER BY " . $columns[$order_column] . " " . $order_dir;
+        } else {
+            $mainQuery .= " ORDER BY date DESC, remitting_time DESC";
         }
         $mainQuery .= " LIMIT :start, :length";
         
         // Execute main query
         $this->db->query($mainQuery);
         if (!empty($search)) {
-            $this->db->bind(':search', $searchParam);
+            $this->db->bind(':search', "%{$search}%");
         }
-        $this->db->bind(':start', (int)$start, PDO::PARAM_INT);
-        $this->db->bind(':length', (int)$length, PDO::PARAM_INT);
+        $this->db->bind(':start', $start, PDO::PARAM_INT);
+        $this->db->bind(':length', $length, PDO::PARAM_INT);
         
         $results = $this->db->resultSet();
         
         return [
             'data' => $results,
-            'total' => $totalRecords
+            'total' => $totalRecords,
+            'filtered' => $filteredRecords
         ];
     }
 }

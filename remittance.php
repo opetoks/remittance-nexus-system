@@ -304,6 +304,9 @@ $remittances = $remittanceModel->getRemittances();
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -317,33 +320,38 @@ $remittances = $remittanceModel->getRemittances();
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        $(document).ready(function() {
-            $('#remittancesTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: 'api/get_remittances.php',
-                    type: 'POST'
-                },
-                pageLength: 10,
-                columns: [
-                    { data: 0 }, // Remit ID
-                    { data: 1 }, // Date
-                    { data: 2 }, // Amount
-                    { data: 3 }, // No. of Receipts
-                    { data: 4 }, // Category
-                    { data: 5 }, // Remitting Officer
-                    { data: 6 }, // Posted By
-                    { data: 7 }, // Status
-                    { data: 8, orderable: false } // Actions
-                ],
-                order: [[1, 'desc']], // Order by date descending
-                responsive: true,
-                language: {
-                    processing: '<i class="fas fa-spinner fa-spin fa-2x"></i>'
+    $(document).ready(function() {
+        $('#remittancesTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: 'api/get_remittances.php',
+                type: 'POST',
+                error: function(xhr, error, thrown) {
+                    console.error('DataTables error:', error, thrown);
                 }
-            });
+            },
+            pageLength: 10,
+            columns: [
+                { data: 0 }, // Remit ID
+                { data: 1 }, // Date
+                { data: 2 }, // Amount
+                { data: 3 }, // No. of Receipts
+                { data: 4 }, // Category
+                { data: 5 }, // Remitting Officer
+                { data: 6 }, // Posted By
+                { data: 7 }, // Status
+                { data: 8, orderable: false } // Actions
+            ],
+            order: [[1, 'desc']], // Order by date descending
+            responsive: true,
+            language: {
+                processing: '<i class="fas fa-spinner fa-spin fa-2x"></i>',
+                emptyTable: 'No remittances found',
+                zeroRecords: 'No matching remittances found'
+            }
         });
+    });
     </script>
     <script src="assets/js/main.js"></script>
 </body>
