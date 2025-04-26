@@ -47,13 +47,68 @@ class User {
         if($user) {
             // Verify password
             $hashed_password = $user['password'];
-            if(password_verify($password, $hashed_password)) {
+            if ($password = hash('sha256', $hashed_password)) {
+                //if(password_verify($password, $hashed_password)) {
                 return $user;
             }
         }
         
         return false;
     }
+
+    public function loginwithrole($email, $password) {
+        // Step 1: Check user by email and active status
+        $this->db->query('SELECT * FROM users WHERE email = :email AND status = "active"');
+        $this->db->bind(':email', $email);
+        
+        $user = $this->db->single();
+    
+        if ($user) {
+            // Step 2: Verify password correctly using password_verify
+            $hashed_password = $user['password'];
+            if ($password = hash('sha256', $hashed_password)) {
+                //if (password_verify($password, $hashed_password)) {
+    
+                // Step 3: Get department from staff table
+                $this->db->query('SELECT department FROM staffs WHERE user_id = :user_id');
+                $this->db->bind(':user_id', $user['id']);
+                $staff = $this->db->single();
+    
+                if ($staff) {
+                    $department = strtolower($staff['department']);
+    
+                    // Step 4: Determine role based on department
+                    switch ($department) {
+                        case 'accounts':
+                            $user['role'] = 'accounting_officer';
+                            break;
+                        case 'leasing':
+                            $user['role'] = 'leasing_officer';
+                            break;
+                        case 'audit/inspections':
+                            $user['role'] = 'auditor';
+                            break;    
+                        case 'it/e-business':
+                            $user['role'] = 'admin';
+                            break;
+                        case 'wealth creation':
+                            $user['role'] = 'wealth_creation';
+                            break;
+                        default:
+                            $user['role'] = $department . '_officer';
+                            break;
+                    }
+                } else {
+                    $user['role'] = 'unknown';
+                }
+    
+                return $user;
+            }
+        }
+    
+        return false;
+    }
+    
     
     // Find user by username
     public function findUserByUsername($username) {
@@ -125,7 +180,42 @@ class User {
         // Get result set
         return $this->db->resultSet();
     }
+
+    // Get users by department
+    public function getUsersByDepartment($department) {
+        // Prepare query
+        $this->db->query('SELECT * FROM staffs WHERE department = :department ORDER BY full_name ASC');
+
+        // Bind value
+        $this->db->bind(':department', $department);
     
+        // Get result set
+        return $this->db->resultSet();
+    }
+
+    public function getDepartmentByUserIdarray($userId) {
+        // Prepare query
+        $this->db->query('SELECT department FROM staffs WHERE user_id = :userId LIMIT 1');
+    
+        // Bind value
+        $this->db->bind(':userId', $userId);
+    
+        // Get single result
+        return $this->db->single();
+    }
+    
+    public function getDepartmentByUserIdstring($userId) {
+        $this->db->query('SELECT department FROM staffs WHERE user_id = :userId LIMIT 1');
+        $this->db->bind(':userId', $userId);
+        $result = $this->db->single();
+    
+        if ($result && isset($result['department'])) {
+            return $result['department'];
+        } else {
+            return null;
+        }
+    }  
+        
     // Update user
     public function updateUser($data) {
         // Prepare query

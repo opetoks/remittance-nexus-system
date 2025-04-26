@@ -9,7 +9,8 @@ require_once 'helpers/session_helper.php';
 
 // Check if user is logged in and has proper role
 requireLogin();
-requireRole('leasing_officer');
+$userId = getLoggedInUserId();
+hasDepartment('Wealth Creation');
 
 // Initialize objects
 $db = new Database();
@@ -17,6 +18,9 @@ $user = new User();
 $remittanceModel = new Remittance();
 $transactionModel = new Transaction();
 $accountModel = new Account();
+
+// Get Current User department
+$userDepartment = $user->getDepartmentByUserIdstring($userId);
 
 // Get remit_id from URL if provided
 $remit_id = isset($_GET['remit_id']) ? sanitize($_GET['remit_id']) : '';
@@ -30,7 +34,8 @@ if (!empty($remit_id)) {
         redirect('index.php');
     }
 }
-
+// Get current user information
+$currentUser = $user->getUserById($userId);
 // Get all remittances for this officer
 $myRemittances = $remittanceModel->getRemittancesByOfficer($_SESSION['user_id']);
 
@@ -45,21 +50,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validate and sanitize input
     $remit_id = sanitize($_POST['remit_id']);
     $receipt_no = sanitize($_POST['receipt_no']);
-    $customer_name = sanitize($_POST['customer_name'] ?? '');
+    $customer_name = sanitize(isset($_POST['customer_name']) ? $_POST['customer_name'] : '');
     $date_of_payment = sanitize($_POST['date_of_payment']);
     $amount_paid = floatval(sanitize($_POST['amount_paid']));
     $income_line = sanitize($_POST['income_line']);
     $payment_type = sanitize($_POST['payment_type']);
-    
+
     // Additional details based on income line
-    $shop_id = sanitize($_POST['shop_id'] ?? '');
-    $shop_no = sanitize($_POST['shop_no'] ?? '');
-    $shop_size = sanitize($_POST['shop_size'] ?? '');
-    $start_date = sanitize($_POST['start_date'] ?? '');
-    $end_date = sanitize($_POST['end_date'] ?? '');
-    $no_of_tickets = intval(sanitize($_POST['no_of_tickets'] ?? 0));
-    $plate_no = sanitize($_POST['plate_no'] ?? '');
-    $transaction_desc = sanitize($_POST['transaction_desc'] ?? '');
+    $shop_id = sanitize(isset($_POST['shop_id']) ? $_POST['shop_id'] : '');
+    $shop_no = sanitize(isset($_POST['shop_no']) ? $_POST['shop_no'] : '');
+    $shop_size = sanitize(isset($_POST['shop_size']) ? $_POST['shop_size'] : '');
+    $start_date = sanitize(isset($_POST['start_date']) ? $_POST['start_date'] : '');
+    $end_date = sanitize(isset($_POST['end_date']) ? $_POST['end_date'] : '');
+    $no_of_tickets = intval(sanitize(isset($_POST['no_of_tickets']) ? $_POST['no_of_tickets'] : 0));
+    $plate_no = sanitize(isset($_POST['plate_no']) ? $_POST['plate_no'] : '');
+    $transaction_desc = sanitize(isset($_POST['transaction_desc']) ? $_POST['transaction_desc'] : '');
+
     
     // Validation
     $errors = [];
@@ -201,25 +207,25 @@ $is_after_cutoff = $current_time > $cutoff_time;
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 
-                <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+                <?php if(hasDepartment('IT/E-Business') || hasDepartment('Accounts')): ?>
                 <a href="remittance.php" class="sidebar-menu-item">
                     <i class="fas fa-money-bill-wave"></i> Remittances
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('leasing_officer')): ?>
+                <?php if(hasDepartment('leasing')): ?>
                 <a href="post_collection.php" class="sidebar-menu-item active">
                     <i class="fas fa-receipt"></i> Post Collections
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('account_officer')): ?>
+                <?php if(hasDepartment('Accounts')): ?>
                 <a href="approve_posts.php" class="sidebar-menu-item">
                     <i class="fas fa-check-circle"></i> Approve Posts
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('auditor')): ?>
+                <?php if(hasDepartment('Audit/Inspections')): ?>
                 <a href="verify_transactions.php" class="sidebar-menu-item">
                     <i class="fas fa-clipboard-check"></i> Verify Transactions
                 </a>
@@ -229,7 +235,7 @@ $is_after_cutoff = $current_time > $cutoff_time;
                     <i class="fas fa-exchange-alt"></i> Transactions
                 </a>
                 
-                <?php if(hasRole('admin')): ?>
+                <?php if(hasDepartment('IT/E-Business')): ?>
                 <div class="sidebar-menu-title">ADMINISTRATION</div>
                 
                 <a href="accounts.php" class="sidebar-menu-item">
@@ -268,7 +274,7 @@ $is_after_cutoff = $current_time > $cutoff_time;
                             <div class="avatar">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <span class="name"><?php echo $_SESSION['user_name']; ?></span>
+                            <span class="name"><?php echo $currentUser['full_name']; ?></span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         

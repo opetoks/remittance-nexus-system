@@ -8,13 +8,15 @@ require_once 'helpers/session_helper.php';
 
 // Check if user is logged in and has proper role
 requireLogin();
-requireRole('auditor');
+$userId = getLoggedInUserId();
+hasDepartment('Audit/Inspections');
 
 // Initialize objects
 $db = new Database();
 $user = new User();
 $transactionModel = new Transaction();
-
+// Get current user information
+$currentUser = $user->getUserById($userId);
 // Process verify/reject actions
 $success_msg = $error_msg = '';
 
@@ -82,25 +84,25 @@ $pendingTransactions = $transactionModel->getPendingTransactionsForAuditVerifica
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 
-                <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+                <?php if(hasDepartment('IT/E-Business') || hasDepartment('Accounts')): ?>
                 <a href="remittance.php" class="sidebar-menu-item">
                     <i class="fas fa-money-bill-wave"></i> Remittances
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('leasing_officer')): ?>
+                <?php if(hasDepartment('leasing')): ?>
                 <a href="post_collection.php" class="sidebar-menu-item">
                     <i class="fas fa-receipt"></i> Post Collections
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('account_officer')): ?>
+                <?php if(hasDepartment('Accounts')): ?>
                 <a href="approve_posts.php" class="sidebar-menu-item">
                     <i class="fas fa-check-circle"></i> Approve Posts
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('auditor')): ?>
+                <?php if(hasDepartment('Audit/Inspections')): ?>
                 <a href="verify_transactions.php" class="sidebar-menu-item active">
                     <i class="fas fa-clipboard-check"></i> Verify Transactions
                 </a>
@@ -110,7 +112,7 @@ $pendingTransactions = $transactionModel->getPendingTransactionsForAuditVerifica
                     <i class="fas fa-exchange-alt"></i> Transactions
                 </a>
                 
-                <?php if(hasRole('admin')): ?>
+                <?php if(hasDepartment('IT/E-Business')): ?>
                 <div class="sidebar-menu-title">ADMINISTRATION</div>
                 
                 <a href="accounts.php" class="sidebar-menu-item">
@@ -149,7 +151,7 @@ $pendingTransactions = $transactionModel->getPendingTransactionsForAuditVerifica
                             <div class="avatar">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <span class="name"><?php echo $_SESSION['user_name']; ?></span>
+                            <span class="name"><?php echo $currentUser['full_name']; ?></span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         

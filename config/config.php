@@ -4,11 +4,11 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'income_erp');
+define('DB_NAME', 'wealth_creation');
 
 // Application configuration
 define('APP_NAME', 'Income ERP');
-define('APP_URL', 'http://localhost/income_erp');
+define('APP_URL', 'http://localhost:8080/woobs_erp/wealthcreation/modules/staff/mod');
 define('APP_VERSION', '1.0.0');
 
 // Session configuration
@@ -23,5 +23,5 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Secret key for token generation
-define('SECRET_KEY', 'your_secret_key_here');
+define('SECRET_KEY', '');
 ?>

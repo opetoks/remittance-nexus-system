@@ -40,39 +40,39 @@ class Transaction {
             )');
             
             // Bind values
-            $this->db->bind(':shop_id', $data['shop_id'] ?? null);
-            $this->db->bind(':customer_name', $data['customer_name'] ?? null);
-            $this->db->bind(':shop_no', $data['shop_no'] ?? null);
-            $this->db->bind(':shop_size', $data['shop_size'] ?? null);
+            $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
+            $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
+            $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
+            $this->db->bind(':shop_size', isset($data['shop_size']) ? $data['shop_size'] : null);
             $this->db->bind(':date_of_payment', $data['date_of_payment']);
-            $this->db->bind(':date_on_receipt', $data['date_on_receipt'] ?? null);
-            $this->db->bind(':start_date', $data['start_date'] ?? null);
-            $this->db->bind(':end_date', $data['end_date'] ?? null);
+            $this->db->bind(':date_on_receipt', isset($data['date_on_receipt']) ? $data['date_on_receipt'] : null);
+            $this->db->bind(':start_date', isset($data['start_date']) ? $data['start_date'] : null);
+            $this->db->bind(':end_date', isset($data['end_date']) ? $data['end_date'] : null);
             $this->db->bind(':payment_type', $data['payment_type']);
-            $this->db->bind(':ticket_category', $data['ticket_category'] ?? null);
-            $this->db->bind(':transaction_desc', $data['transaction_desc'] ?? null);
-            $this->db->bind(':bank_name', $data['bank_name'] ?? null);
-            $this->db->bind(':cheque_no', $data['cheque_no'] ?? null);
-            $this->db->bind(':teller_no', $data['teller_no'] ?? null);
-            $this->db->bind(':receipt_no', $data['receipt_no'] ?? null);
+            $this->db->bind(':ticket_category', isset($data['ticket_category']) ? $data['ticket_category'] : null);
+            $this->db->bind(':transaction_desc', isset($data['transaction_desc']) ? $data['transaction_desc'] : null);
+            $this->db->bind(':bank_name', isset($data['bank_name']) ? $data['bank_name'] : null);
+            $this->db->bind(':cheque_no', isset($data['cheque_no']) ? $data['cheque_no'] : null);
+            $this->db->bind(':teller_no', isset($data['teller_no']) ? $data['teller_no'] : null);
+            $this->db->bind(':receipt_no', isset($data['receipt_no']) ? $data['receipt_no'] : null);
             $this->db->bind(':amount_paid', $data['amount_paid']);
-            $this->db->bind(':remitting_customer', $data['remitting_customer'] ?? null);
-            $this->db->bind(':remitting_id', $data['remitting_id'] ?? null);
-            $this->db->bind(':remitting_staff', $data['remitting_staff'] ?? null);
+            $this->db->bind(':remitting_customer', isset($data['remitting_customer']) ? $data['remitting_customer'] : null);
+            $this->db->bind(':remitting_id', isset($data['remitting_id']) ? $data['remitting_id'] : null);
+            $this->db->bind(':remitting_staff', isset($data['remitting_staff']) ? $data['remitting_staff'] : null);
             $this->db->bind(':posting_officer_id', $data['posting_officer_id']);
             $this->db->bind(':posting_officer_name', $data['posting_officer_name']);
             $this->db->bind(':debit_account', $data['debit_account']);
             $this->db->bind(':credit_account', $data['credit_account']);
-            $this->db->bind(':customer_status', $data['customer_status'] ?? null);
-            $this->db->bind(':payment_category', $data['payment_category'] ?? null);
-            $this->db->bind(':entry_status', $data['entry_status'] ?? null);
-            $this->db->bind(':no_of_tickets', $data['no_of_tickets'] ?? null);
-            $this->db->bind(':plate_no', $data['plate_no'] ?? null);
-            $this->db->bind(':no_of_nights', $data['no_of_nights'] ?? null);
-            $this->db->bind(':it_status', $data['it_status'] ?? null);
-            $this->db->bind(':sticker_no', $data['sticker_no'] ?? null);
-            $this->db->bind(':no_of_days', $data['no_of_days'] ?? null);
-            $this->db->bind(':ref_no', $data['ref_no'] ?? null);
+            $this->db->bind(':customer_status', isset($data['customer_status']) ? $data['customer_status'] : null);
+            $this->db->bind(':payment_category', isset($data['payment_category']) ? $data['payment_category'] : null);
+            $this->db->bind(':entry_status', isset($data['entry_status']) ? $data['entry_status'] : null);
+            $this->db->bind(':no_of_tickets', isset($data['no_of_tickets']) ? $data['no_of_tickets'] : null);
+            $this->db->bind(':plate_no', isset($data['plate_no']) ? $data['plate_no'] : null);
+            $this->db->bind(':no_of_nights', isset($data['no_of_nights']) ? $data['no_of_nights'] : null);
+            $this->db->bind(':it_status', isset($data['it_status']) ? $data['it_status'] : null);
+            $this->db->bind(':sticker_no', isset($data['sticker_no']) ? $data['sticker_no'] : null);
+            $this->db->bind(':no_of_days', isset($data['no_of_days']) ? $data['no_of_days'] : null);
+            $this->db->bind(':ref_no', isset($data['ref_no']) ? $data['ref_no'] : null);
             $this->db->bind(':remit_id', $data['remit_id']);
             $this->db->bind(':income_line', $data['income_line']);
             
@@ -104,20 +104,21 @@ class Transaction {
                         )");
                         
                         $this->db->bind(':transaction_id', $transaction_id);
-                        $this->db->bind(':shop_id', $data['shop_id'] ?? null);
-                        $this->db->bind(':shop_no', $data['shop_no'] ?? null);
-                        $this->db->bind(':shop_size', $data['shop_size'] ?? null);
-                        $this->db->bind(':customer_name', $data['customer_name'] ?? null);
-                        $this->db->bind(':start_date', $data['start_date'] ?? null);
-                        $this->db->bind(':end_date', $data['end_date'] ?? null);
+                        $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
+                        $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
+                        $this->db->bind(':shop_size', isset($data['shop_size']) ? $data['shop_size'] : null);
+                        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
+                        $this->db->bind(':start_date', isset($data['start_date']) ? $data['start_date'] : null);
+
+                        $this->db->bind(':end_date', isset($data['end_date']) ? $data['end_date'] : null);
                         $this->db->bind(':amount', $data['amount_paid']);
                         break;
                         
-                    case 'income_service_charge':
+                        case 'income_service_charge':
                         // Extract month/year from dates
-                        $month = date('F', strtotime($data['start_date'] ?? date('Y-m-d')));
-                        $year = date('Y', strtotime($data['start_date'] ?? date('Y-m-d')));
-                        
+                        $month = date('F', strtotime(isset($data['start_date']) ? $data['start_date'] : date('Y-m-d')));
+                        $year = date('Y', strtotime(isset($data['start_date']) ? $data['start_date'] : date('Y-m-d')));
+                    
                         $this->db->query("INSERT INTO $table_name (
                             transaction_id, shop_id, shop_no, customer_name, 
                             month, year, amount
@@ -125,11 +126,12 @@ class Transaction {
                             :transaction_id, :shop_id, :shop_no, :customer_name, 
                             :month, :year, :amount
                         )");
-                        
+                    
                         $this->db->bind(':transaction_id', $transaction_id);
-                        $this->db->bind(':shop_id', $data['shop_id'] ?? null);
-                        $this->db->bind(':shop_no', $data['shop_no'] ?? null);
-                        $this->db->bind(':customer_name', $data['customer_name'] ?? null);
+                        $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
+                        $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
+                        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
+                        
                         $this->db->bind(':month', $month);
                         $this->db->bind(':year', $year);
                         $this->db->bind(':amount', $data['amount_paid']);
@@ -144,7 +146,7 @@ class Transaction {
                         )");
                         
                         $this->db->bind(':transaction_id', $transaction_id);
-                        $this->db->bind(':description', $data['transaction_desc'] ?? '');
+                        $this->db->bind(':description', isset($data['transaction_desc']) ? $data['transaction_desc'] : '');
                         $this->db->bind(':amount', $data['amount_paid']);
                         $this->db->bind(':date', $data['date_of_payment']);
                         break;

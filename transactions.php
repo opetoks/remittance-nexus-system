@@ -8,15 +8,18 @@ require_once 'helpers/session_helper.php';
 
 // Check if user is logged in
 requireLogin();
-
+$userId = getLoggedInUserId();
 // Initialize objects
 $db = new Database();
 $user = new User();
 $transactionModel = new Transaction();
 
+// Get current user information
+$currentUser = $user->getUserById($userId);
+
 // Get all transactions
-// For leasing officers, only show their own transactions
-if (hasRole('leasing_officer')) {
+// For Wealth Creation officers, only show their own transactions
+if (hasDepartment('Wealth Creation')) {
     $query = "SELECT * FROM account_general_transaction_new WHERE posting_officer_id = :officer_id ORDER BY posting_time DESC";
     $db->query($query);
     $db->bind(':officer_id', $_SESSION['user_id']);
@@ -53,25 +56,25 @@ if (hasRole('leasing_officer')) {
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 
-                <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+                <?php if(hasDepartment('IT/E-Business') || hasDepartment('Accounts')): ?>
                 <a href="remittance.php" class="sidebar-menu-item">
                     <i class="fas fa-money-bill-wave"></i> Remittances
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('leasing_officer')): ?>
+                <?php if(hasDepartment('Wealth Creation')): ?>
                 <a href="post_collection.php" class="sidebar-menu-item">
                     <i class="fas fa-receipt"></i> Post Collections
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('account_officer')): ?>
+                <?php if(hasDepartment('Accounts')): ?>
                 <a href="approve_posts.php" class="sidebar-menu-item">
                     <i class="fas fa-check-circle"></i> Approve Posts
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('auditor')): ?>
+                <?php if(hasDepartment('Audit/Inspections')): ?>
                 <a href="verify_transactions.php" class="sidebar-menu-item">
                     <i class="fas fa-clipboard-check"></i> Verify Transactions
                 </a>
@@ -81,7 +84,7 @@ if (hasRole('leasing_officer')) {
                     <i class="fas fa-exchange-alt"></i> Transactions
                 </a>
                 
-                <?php if(hasRole('admin')): ?>
+                <?php if(hasDepartment('IT/E-Business')): ?>
                 <div class="sidebar-menu-title">ADMINISTRATION</div>
                 
                 <a href="accounts.php" class="sidebar-menu-item">
@@ -120,7 +123,7 @@ if (hasRole('leasing_officer')) {
                             <div class="avatar">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <span class="name"><?php echo $_SESSION['user_name']; ?></span>
+                            <span class="name"><?php echo $currentUser['full_name']; ?></span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         
@@ -146,7 +149,7 @@ if (hasRole('leasing_officer')) {
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">All Transactions</h5>
-                        <?php if(hasRole('leasing_officer')): ?>
+                        <?php if(hasDepartment('Wealth Creation')): ?>
                         <a href="post_collection.php" class="btn btn-primary">
                             <i class="fas fa-plus"></i> New Transaction
                         </a>

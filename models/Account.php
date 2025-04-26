@@ -12,7 +12,7 @@ class Account {
     // Get all accounts
     public function getAccounts() {
         // Prepare query
-        $this->db->query('SELECT * FROM account ORDER BY acct_id ASC');
+        $this->db->query('SELECT * FROM accounts ORDER BY acct_id ASC');
         
         // Get result set
         return $this->db->resultSet();
@@ -21,7 +21,7 @@ class Account {
     // Get all income line accounts
     public function getIncomeLineAccounts() {
         // Prepare query
-        $this->db->query('SELECT * FROM account WHERE income_line = TRUE AND active = TRUE ORDER BY acct_id ASC');
+        $this->db->query('SELECT * FROM accounts WHERE income_line = TRUE AND active = TRUE ORDER BY acct_id ASC');
         
         // Get result set
         return $this->db->resultSet();
@@ -30,7 +30,7 @@ class Account {
     // Get account by ID
     public function getAccountById($id) {
         // Prepare query
-        $this->db->query('SELECT * FROM account WHERE acct_id = :id');
+        $this->db->query('SELECT * FROM accounts WHERE acct_id = :id');
         
         // Bind value
         $this->db->bind(':id', $id);
@@ -42,7 +42,7 @@ class Account {
     // Get account by code
     public function getAccountByCode($code) {
         // Prepare query
-        $this->db->query('SELECT * FROM account WHERE acct_code = :code');
+        $this->db->query('SELECT * FROM accounts WHERE acct_code = :code');
         
         // Bind value
         $this->db->bind(':code', $code);
@@ -54,7 +54,7 @@ class Account {
     // Add new account
     public function addAccount($data) {
         // Prepare query
-        $this->db->query('INSERT INTO account (gl_code, acct_code, acct_type, acct_class, acct_class_type, acct_desc, acct_alias, acct_table_name, balance_sheet_report, profit_loss_report, negative_acct, active, page_visibility, audit_position, income_line) 
+        $this->db->query('INSERT INTO accounts (gl_code, acct_code, acct_type, acct_class, acct_class_type, acct_desc, acct_alias, acct_table_name, balance_sheet_report, profit_loss_report, negative_acct, active, page_visibility, audit_position, income_line) 
         VALUES (:gl_code, :acct_code, :acct_type, :acct_class, :acct_class_type, :acct_desc, :acct_alias, :acct_table_name, :balance_sheet_report, :profit_loss_report, :negative_acct, :active, :page_visibility, :audit_position, :income_line)');
         
         // Bind values
@@ -85,7 +85,7 @@ class Account {
     // Update account
     public function updateAccount($data) {
         // Prepare query
-        $this->db->query('UPDATE account SET 
+        $this->db->query('UPDATE accounts SET 
             gl_code = :gl_code, 
             acct_code = :acct_code, 
             acct_type = :acct_type, 

@@ -22,15 +22,15 @@ class UnpostedTransaction {
         )');
         
         $this->db->bind(':remit_id', $data['remit_id']);
-        $this->db->bind(':trans_id', $data['trans_id'] ?? null);
-        $this->db->bind(':shop_id', $data['shop_id'] ?? null);
-        $this->db->bind(':shop_no', $data['shop_no'] ?? null);
-        $this->db->bind(':customer_name', $data['customer_name'] ?? null);
+        $this->db->bind(':trans_id', isset($data['trans_id']) ? $data['trans_id'] : null);
+        $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
+        $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
+        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
         $this->db->bind(':date_of_payment', $data['date_of_payment']);
-        $this->db->bind(':transaction_desc', $data['transaction_desc'] ?? null);
+        $this->db->bind(':transaction_desc', isset($data['transaction_desc']) ? $data['transaction_desc'] : null);
         $this->db->bind(':amount_paid', $data['amount_paid']);
         $this->db->bind(':receipt_no', $data['receipt_no']);
-        $this->db->bind(':category', $data['category'] ?? null);
+        $this->db->bind(':category', isset($data['category']) ? $data['category'] : null);
         $this->db->bind(':income_line', $data['income_line']);
         $this->db->bind(':posting_officer_id', $data['posting_officer_id']);
         $this->db->bind(':posting_officer_name', $data['posting_officer_name']);

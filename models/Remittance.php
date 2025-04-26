@@ -35,7 +35,7 @@ class Remittance {
         if($this->db->execute()) {
             return $this->db->lastInsertId();
         } else {
-            return false;
+            return false; 
         }
     }
     
@@ -107,7 +107,7 @@ class Remittance {
         // Get single record
         $result = $this->db->single();
         
-        return $result['total'] ?? 0;
+        return isset($result['total']) ? $result['total'] : 0;
     }
     
     // Check if remittance is fully posted

@@ -1,20 +1,28 @@
 
 <?php
 require_once 'config/config.php';
+require_once 'config/Database.php';
 require_once 'helpers/session_helper.php';
+require_once 'models/User.php';
 require_once 'models/UnpostedTransaction.php';
 require_once 'models/Remittance.php';
 require_once 'models/Account.php';
 
 // Check if user is logged in and has proper role
 requireLogin();
-requireRole('leasing_officer');
+$userId = getLoggedInUserId();
+hasDepartment('Wealth Creation');
 
 // Initialize objects
 $unpostedModel = new UnpostedTransaction();
 $remittanceModel = new Remittance();
 $accountModel = new Account();
+$user = new User;
 
+// Get current user information
+$currentUser = $user->getUserById($userId);
+// Get Current User department
+$userDepartment = $user->getDepartmentByUserIdstring($userId);
 // Get income line accounts
 $incomeLines = $accountModel->getIncomeLineAccounts();
 
@@ -30,16 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validate and sanitize input
     $remit_id = sanitize($_POST['remit_id']);
     $receipt_no = sanitize($_POST['receipt_no']);
-    $customer_name = sanitize($_POST['customer_name'] ?? '');
+    $customer_name = sanitize(isset($_POST['customer_name']) ? $_POST['customer_name'] : '');
     $date_of_payment = sanitize($_POST['date_of_payment']);
     $amount_paid = floatval(sanitize($_POST['amount_paid']));
     $income_line = sanitize($_POST['income_line']);
     $reason = sanitize($_POST['reason']);
     
     // Additional details
-    $shop_id = sanitize($_POST['shop_id'] ?? '');
-    $shop_no = sanitize($_POST['shop_no'] ?? '');
-    $transaction_desc = sanitize($_POST['transaction_desc'] ?? '');
+    $shop_id = sanitize(isset($_POST['shop_id']) ? $_POST['shop_id'] : '');
+    $shop_no = sanitize(isset($_POST['shop_no']) ? $_POST['shop_no'] : '');
+    $transaction_desc = sanitize(isset($_POST['transaction_desc']) ? $_POST['transaction_desc'] : '');
     
     // Validation
     $errors = [];
@@ -102,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Get unposted transactions for this officer
-$unpostedTransactions = $unpostedModel->getUnpostedTransactionsByOfficer($_SESSION['user_id']);
+$unpostedTransactions = $unpostedModel->getUnpostedTransactionsByOfficer($userId);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -118,10 +126,10 @@ $unpostedTransactions = $unpostedModel->getUnpostedTransactionsByOfficer($_SESSI
 </head>
 <body>
     <div class="wrapper">
-        <?php include 'includes/sidebar.php'; ?>
+        <?php include 'include/sidebar.php'; ?>
         
         <div class="main-content">
-            <?php include 'includes/header.php'; ?>
+            <?php include 'include/header.php'; ?>
             
             <div class="content-body">
                 <?php if(!empty($success_msg)): ?>

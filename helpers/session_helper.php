@@ -1,10 +1,24 @@
 
 <?php
+session_start();
+// print_r($_SESSION);
+// exit;
 // Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_name(SESSION_NAME);
-    session_start();
-    session_regenerate_id();
+// if (session_status() === PHP_SESSION_NONE) {
+//     session_name(SESSION_NAME);
+//     session_start();
+//     session_regenerate_id();
+// }
+
+function isLoggedIn() {
+    return (isset($_SESSION['admin']) || isset($_SESSION['staff']));
+}
+
+// Redirect if not logged in
+function requireLogin() {
+    if (!isLoggedIn()) { 
+        redirect('login.php');
+    }
 }
 
 // Flash message helper
@@ -30,28 +44,33 @@ function flash($name = '', $message = '', $class = 'alert alert-success') {
     }
 }
 
-// Check if user is logged in
-function isLoggedIn() {
-    if (isset($_SESSION['user_id'])) {
-        return true;
+function getLoggedInUserId() {
+    if (isset($_SESSION['admin'])) {
+        return $_SESSION['admin'];
+    } elseif (isset($_SESSION['staff'])) {
+        return $_SESSION['staff'];
     } else {
-        return false;
+        return null;
     }
 }
+
+$userId = getLoggedInUserId();
 
 // Check user role
-function hasRole($role) {
-    if (isLoggedIn() && $_SESSION['user_role'] === $role) {
+// function hasRole($role) {
+//     if (isLoggedIn() && $_SESSION['user_role'] === $role) {
+//         return true;
+//     } else {
+//         return false;
+//     }
+// }
+
+function hasDepartment($dept) {
+    global $userDepartment;
+    if ($userDepartment === $dept) {
         return true;
     } else {
         return false;
-    }
-}
-
-// Redirect if not logged in
-function requireLogin() {
-    if (!isLoggedIn()) {
-        redirect('login.php');
     }
 }
 
@@ -68,6 +87,22 @@ function requireAnyRole($roles = []) {
         redirect('unauthorized.php');
     }
 }
+
+function requireAnyDepartment($departments = []) {
+    global $userId;
+    $user = new User();
+    if (!isLoggedIn()) {
+        redirect('login.php');
+    }
+
+    $userId = getLoggedInUserId();
+    $department = $user->getDepartmentByUserIdstring($userId); // make sure this function exists
+
+    if (!in_array($department, $departments)) {
+        redirect('unauthorized.php');
+    }
+}
+
 
 // General redirect function
 function redirect($location) {

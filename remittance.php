@@ -8,7 +8,8 @@ require_once 'helpers/session_helper.php';
 
 // Check if user is logged in and has proper role
 requireLogin();
-requireAnyRole(['admin', 'account_officer']);
+$userId = getLoggedInUserId();
+requireAnyDepartment(['IT/E-Business', 'Accounts']);
 
 // Initialize objects
 $db = new Database();
@@ -16,8 +17,9 @@ $user = new User();
 $remittanceModel = new Remittance();
 
 // Get all leasing officers
-$leasingOfficers = $user->getUsersByRole('leasing_officer');
-
+$leasingOfficers = $user->getUsersByDepartment('Wealth Creation');
+// Get current user information
+$currentUser = $user->getUserById($userId);
 // Process form submission
 $success_msg = $error_msg = '';
 
@@ -98,7 +100,7 @@ $remittances = $remittanceModel->getRemittances();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Remittance - Income ERP System</title>
+    <title>Account Remittance Dashboard - ERP </title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
@@ -111,7 +113,7 @@ $remittances = $remittanceModel->getRemittances();
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <i class="fas fa-chart-line"></i> Income ERP
+                    <i class="fas fa-chart-line"></i> W C ERP
                 </div>
             </div>
             
@@ -122,25 +124,25 @@ $remittances = $remittanceModel->getRemittances();
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 
-                <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+                <?php if(hasDepartment('admin') || hasDepartment('Accounts')): ?>
                 <a href="remittance.php" class="sidebar-menu-item active">
                     <i class="fas fa-money-bill-wave"></i> Remittances
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('leasing_officer')): ?>
+                <?php if(hasDepartment('leasing_officer')): ?>
                 <a href="post_collection.php" class="sidebar-menu-item">
                     <i class="fas fa-receipt"></i> Post Collections
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('account_officer')): ?>
+                <?php if(hasDepartment('Accounts')): ?>
                 <a href="approve_posts.php" class="sidebar-menu-item">
                     <i class="fas fa-check-circle"></i> Approve Posts
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('auditor')): ?>
+                <?php if(hasDepartment('auditor')): ?>
                 <a href="verify_transactions.php" class="sidebar-menu-item">
                     <i class="fas fa-clipboard-check"></i> Verify Transactions
                 </a>
@@ -150,7 +152,7 @@ $remittances = $remittanceModel->getRemittances();
                     <i class="fas fa-exchange-alt"></i> Transactions
                 </a>
                 
-                <?php if(hasRole('admin')): ?>
+                <?php if(hasDepartment('admin')): ?>
                 <div class="sidebar-menu-title">ADMINISTRATION</div>
                 
                 <a href="accounts.php" class="sidebar-menu-item">
@@ -189,7 +191,7 @@ $remittances = $remittanceModel->getRemittances();
                             <div class="avatar">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <span class="name"><?php echo $_SESSION['user_name']; ?></span>
+                            <span class="name"><?php echo $currentUser['full_name']; ?></span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         
@@ -226,7 +228,8 @@ $remittances = $remittanceModel->getRemittances();
                 <!-- New Remittance Form -->
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title">New Cash Remittance</h5>
+                        <h5 class="card-title">Account Remittance Dashboard</h5>
+                        <p><?php include ('countdown_script.php'); ?></p>
                     </div>
                     <div class="card-body">
                         <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST" class="needs-validation">
@@ -259,19 +262,9 @@ $remittances = $remittanceModel->getRemittances();
                                 <label for="category" class="form-label">Category</label>
                                 <select name="category" id="category" class="form-select" required>
                                     <option value="">-- Select Category --</option>
-                                    <option value="Abattoir">Abattoir</option>
-                                    <option value="Car Loading Ticket">Car Loading Ticket</option>
-                                    <option value="Car Park Ticket">Car Park Ticket</option>
-                                    <option value="Hawkers Ticket">Hawkers Ticket</option>
-                                    <option value="WheelBarrow Ticket">WheelBarrow Ticket</option>
-                                    <option value="Daily Trade">Daily Trade</option>
-                                    <option value="Toilet Collection">Toilet Collection</option>
-                                    <option value="Scroll Board">Scroll Board</option>
-                                    <option value="Other POS Ticket">Other POS Ticket</option>
-                                    <option value="Daily Trade Arrears">Daily Trade Arrears</option>
-                                    <option value="Shop Rent">Shop Rent</option>
+                                    <option value="Shop Rent">Rent Collections</option>
                                     <option value="Service Charge">Service Charge</option>
-                                    <option value="Mixed">Mixed</option>
+                                    <option value="Mixed">Other Collections</option>
                                 </select>
                             </div>
                             

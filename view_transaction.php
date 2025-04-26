@@ -43,7 +43,7 @@ if (isset($_GET['action'])) {
     $action = sanitize($_GET['action']);
     
     // Handle leasing officer approval
-    if (hasRole('account_officer') && $action === 'approve_leasing' && $transaction['leasing_post_status'] === 'pending') {
+    if (hasDepartment('Accounts') && $action === 'approve_leasing' && $transaction['leasing_post_status'] === 'pending') {
         $result = $transactionModel->approveLeasingPost($id, $_SESSION['user_id'], $_SESSION['user_name']);
         
         if ($result) {
@@ -56,7 +56,7 @@ if (isset($_GET['action'])) {
     }
     
     // Handle account officer approval
-    if (hasRole('account_officer') && $action === 'approve_account' && $transaction['leasing_post_status'] === 'approved' && $transaction['approval_status'] === 'pending') {
+    if (hasDepartment('Accounts') && $action === 'approve_account' && $transaction['leasing_post_status'] === 'approved' && $transaction['approval_status'] === 'pending') {
         $result = $transactionModel->approveTransaction($id, $_SESSION['user_id'], $_SESSION['user_name']);
         
         if ($result) {
@@ -69,7 +69,7 @@ if (isset($_GET['action'])) {
     }
     
     // Handle auditor verification
-    if (hasRole('auditor') && $action === 'verify' && $transaction['approval_status'] === 'approved' && $transaction['verification_status'] === 'pending') {
+    if (hasDepartment('Audit/Inspections') && $action === 'verify' && $transaction['approval_status'] === 'approved' && $transaction['verification_status'] === 'pending') {
         $result = $transactionModel->verifyTransaction($id, $_SESSION['user_id'], $_SESSION['user_name']);
         
         if ($result) {
@@ -88,11 +88,11 @@ if (isset($_GET['action'])) {
         // Validate appropriate role for the stage
         $canReject = false;
         
-        if ($stage === 'leasing' && hasRole('account_officer') && $transaction['leasing_post_status'] === 'pending') {
+        if ($stage === 'leasing' && hasDepartment('Accounts') && $transaction['leasing_post_status'] === 'pending') {
             $canReject = true;
-        } elseif ($stage === 'account' && hasRole('account_officer') && $transaction['leasing_post_status'] === 'approved' && $transaction['approval_status'] === 'pending') {
+        } elseif ($stage === 'account' && hasDepartment('Accounts') && $transaction['leasing_post_status'] === 'approved' && $transaction['approval_status'] === 'pending') {
             $canReject = true;
-        } elseif ($stage === 'audit' && hasRole('auditor') && $transaction['approval_status'] === 'approved' && $transaction['verification_status'] === 'pending') {
+        } elseif ($stage === 'audit' && hasDepartment('Audit/Inspections') && $transaction['approval_status'] === 'approved' && $transaction['verification_status'] === 'pending') {
             $canReject = true;
         }
         
@@ -139,25 +139,25 @@ if (isset($_GET['action'])) {
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 
-                <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+                <?php if(hasDepartment('IT/E-Business') || hasDepartment('Accounts')): ?>
                 <a href="remittance.php" class="sidebar-menu-item">
                     <i class="fas fa-money-bill-wave"></i> Remittances
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('leasing_officer')): ?>
+                <?php if(hasDepartment('leasing')): ?>
                 <a href="post_collection.php" class="sidebar-menu-item">
                     <i class="fas fa-receipt"></i> Post Collections
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('account_officer')): ?>
+                <?php if(hasDepartment('Accounts')): ?>
                 <a href="approve_posts.php" class="sidebar-menu-item">
                     <i class="fas fa-check-circle"></i> Approve Posts
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasRole('auditor')): ?>
+                <?php if(hasDepartment('Audit/Inspections')): ?>
                 <a href="verify_transactions.php" class="sidebar-menu-item">
                     <i class="fas fa-clipboard-check"></i> Verify Transactions
                 </a>
@@ -167,7 +167,7 @@ if (isset($_GET['action'])) {
                     <i class="fas fa-exchange-alt"></i> Transactions
                 </a>
                 
-                <?php if(hasRole('admin')): ?>
+                <?php if(hasDepartment('IT/E-Business')): ?>
                 <div class="sidebar-menu-title">ADMINISTRATION</div>
                 
                 <a href="accounts.php" class="sidebar-menu-item">
@@ -281,7 +281,7 @@ if (isset($_GET['action'])) {
                                     <tr>
                                         <th>Remittance ID:</th>
                                         <td>
-                                            <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+                                            <?php if(hasDepartment('IT/E-Business') || hasDepartment('Accounts')): ?>
                                                 <a href="view_remittance.php?id=<?php echo $transaction['remit_id']; ?>">
                                                     <?php echo $transaction['remit_id']; ?>
                                                 </a>
@@ -297,7 +297,7 @@ if (isset($_GET['action'])) {
                                 <table class="table table-bordered">
                                     <tr>
                                         <th>Customer Name:</th>
-                                        <td><?php echo $transaction['customer_name'] ?? 'N/A'; ?></td>
+                                        <td><?php echo isset($transaction['customer_name']) ? $transaction['customer_name'] : 'N/A'; ?></td>
                                     </tr>
                                     <?php if(!empty($transaction['shop_id']) || !empty($transaction['shop_no'])): ?>
                                     <tr>
@@ -358,14 +358,14 @@ if (isset($_GET['action'])) {
                                         <th>Debit Account:</th>
                                         <td>
                                             <?php echo $transaction['debit_account']; ?> - 
-                                            <?php echo $debitAccount['acct_desc'] ?? ''; ?>
+                                            <?php echo isset($debitAccount['acct_desc']) ? $debitAccount['acct_desc'] : ''; ?>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th>Credit Account:</th>
                                         <td>
                                             <?php echo $transaction['credit_account']; ?> - 
-                                            <?php echo $creditAccount['acct_desc'] ?? ''; ?>
+                                            <?php echo isset($creditAccount['acct_desc']) ? $creditAccount['acct_desc'] : ''; ?>
                                         </td>
                                     </tr>
                                 </table>
@@ -432,7 +432,7 @@ if (isset($_GET['action'])) {
                         <h5 class="card-title">Actions</h5>
                     </div>
                     <div class="card-body">
-                        <?php if(hasRole('account_officer') && $transaction['leasing_post_status'] === 'pending'): ?>
+                        <?php if(hasDepartment('Accounts') && $transaction['leasing_post_status'] === 'pending'): ?>
                             <a href="view_transaction.php?id=<?php echo $transaction['id']; ?>&action=approve_leasing" class="btn btn-success" onclick="return confirm('Are you sure you want to approve this leasing post?')">
                                 <i class="fas fa-check"></i> Approve Leasing Post
                             </a>
@@ -441,7 +441,7 @@ if (isset($_GET['action'])) {
                             </a>
                         <?php endif; ?>
                         
-                        <?php if(hasRole('account_officer') && $transaction['leasing_post_status'] === 'approved' && $transaction['approval_status'] === 'pending'): ?>
+                        <?php if(hasDepartment('Accounts') && $transaction['leasing_post_status'] === 'approved' && $transaction['approval_status'] === 'pending'): ?>
                             <a href="view_transaction.php?id=<?php echo $transaction['id']; ?>&action=approve_account" class="btn btn-success" onclick="return confirm('Are you sure you want to approve this transaction?')">
                                 <i class="fas fa-check"></i> Approve Transaction
                             </a>
@@ -450,7 +450,7 @@ if (isset($_GET['action'])) {
                             </a>
                         <?php endif; ?>
                         
-                        <?php if(hasRole('auditor') && $transaction['approval_status'] === 'approved' && $transaction['verification_status'] === 'pending'): ?>
+                        <?php if(hasDepartment('Audit/Inspections') && $transaction['approval_status'] === 'approved' && $transaction['verification_status'] === 'pending'): ?>
                             <a href="view_transaction.php?id=<?php echo $transaction['id']; ?>&action=verify" class="btn btn-success" onclick="return confirm('Are you sure you want to verify this transaction?')">
                                 <i class="fas fa-check"></i> Verify Transaction
                             </a>

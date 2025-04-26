@@ -4,13 +4,14 @@ require_once 'config/config.php';
 require_once 'config/Database.php';
 require_once 'models/User.php';
 require_once 'models/Transaction.php';
-require_once 'models/Remittance.php';
+require_once 'models/Remittance.php'; 
 require_once 'models/Account.php';
 require_once 'helpers/session_helper.php';
 
 // Check if user is logged in
 requireLogin();
 
+$userId = getLoggedInUserId();
 // Initialize objects
 $db = new Database();
 $user = new User();
@@ -22,7 +23,7 @@ $account = new Account();
 $stats = $transaction->getTransactionStats();
 
 // Get current user information
-$currentUser = $user->getUserById($_SESSION['user_id']);
+$currentUser = $user->getUserById($userId);
 
 // Get today's remittances
 $todayRemittances = $remittance->getRemittancesByDate(date('Y-m-d'));
@@ -30,16 +31,19 @@ $todayRemittances = $remittance->getRemittancesByDate(date('Y-m-d'));
 // Get income line accounts
 $incomeLines = $account->getIncomeLineAccounts();
 
+// Get Current User department
+$userDepartment = $user->getDepartmentByUserIdstring($userId);
+
 // Get pending transactions based on user role
 $pendingTransactions = [];
 
-if (hasRole('leasing_officer')) {
+if (hasDepartment('Wealth Creation')) {
     // Get remittances for this officer
-    $myRemittances = $remittance->getRemittancesByOfficer($_SESSION['user_id']);
-} elseif (hasRole('account_officer')) {
+    $myRemittances = $remittance->getRemittancesByOfficer($userId);
+} elseif (hasDepartment('Accounts')) {
     // Get pending transactions for account approval
     $pendingTransactions = $transaction->getPendingTransactionsForAccountApproval();
-} elseif (hasRole('auditor')) {
+} elseif (hasDepartment('Audit/Inspections')) {
     // Get pending transactions for audit verification
     $pendingTransactions = $transaction->getPendingTransactionsForAuditVerification();
 }
@@ -59,135 +63,21 @@ if (hasRole('leasing_officer')) {
 <body>
     <div class="wrapper">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <i class="fas fa-chart-line"></i> Income ERP
-                </div>
-            </div>
-            
-            <div class="sidebar-menu">
-                <div class="sidebar-menu-title">MAIN MENU</div>
-                
-                <a href="index.php" class="sidebar-menu-item active">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                
-                <?php if(hasRole('admin') || hasRole('account_officer')): ?>
-                <a href="remittance.php" class="sidebar-menu-item">
-                    <i class="fas fa-money-bill-wave"></i> Remittances
-                </a>
-                <?php endif; ?>
-                
-                <?php if(hasRole('leasing_officer')): ?>
-                <a href="post_collection.php" class="sidebar-menu-item">
-                    <i class="fas fa-receipt"></i> Post Collections
-                </a>
-                <?php endif; ?>
-                
-                <?php if(hasRole('account_officer')): ?>
-                <a href="approve_posts.php" class="sidebar-menu-item">
-                    <i class="fas fa-check-circle"></i> Approve Posts
-                </a>
-                <?php endif; ?>
-                
-                <?php if(hasRole('auditor')): ?>
-                <a href="verify_transactions.php" class="sidebar-menu-item">
-                    <i class="fas fa-clipboard-check"></i> Verify Transactions
-                </a>
-                <?php endif; ?>
-                
-                <a href="transactions.php" class="sidebar-menu-item">
-                    <i class="fas fa-exchange-alt"></i> Transactions
-                </a>
-                
-                <?php if(hasRole('admin')): ?>
-                <div class="sidebar-menu-title">ADMINISTRATION</div>
-                
-                <a href="accounts.php" class="sidebar-menu-item">
-                    <i class="fas fa-chart-pie"></i> Chart of Accounts
-                </a>
-                
-                <a href="users.php" class="sidebar-menu-item">
-                    <i class="fas fa-users"></i> User Management
-                </a>
-                
-                <a href="reports.php" class="sidebar-menu-item">
-                    <i class="fas fa-file-alt"></i> Reports
-                </a>
-                
-                <a href="settings.php" class="sidebar-menu-item">
-                    <i class="fas fa-cog"></i> Settings
-                </a>
-                <?php endif; ?>
-            </div>
-        </aside>
+        <?php include('include/sidebar.php'); ?>
+
         
         <!-- Main Content -->
         <div class="main-content">
             <!-- Header -->
-            <header class="header">
-                <div class="header-left">
-                    <button class="toggle-sidebar">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h4 class="page-title">Dashboard</h4>
-                </div>
-                
-                <div class="header-right">
-                    <div class="user-dropdown">
-                        <button class="user-dropdown-toggle">
-                            <div class="avatar">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <span class="name"><?php echo $_SESSION['user_name']; ?></span>
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        
-                        <div class="user-dropdown-menu">
-                            <a href="profile.php" class="user-dropdown-item">
-                                <i class="fas fa-user-circle"></i> Profile
-                            </a>
-                            <a href="change_password.php" class="user-dropdown-item">
-                                <i class="fas fa-key"></i> Change Password
-                            </a>
-                            <div class="user-dropdown-divider"></div>
-                            <a href="logout.php" class="user-dropdown-item">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <?php include('include/header.php'); ?>
             
             <!-- Content Body -->
             <div class="content-body">
-                <!-- Dashboard Overview -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-card-title">Today's Collection</div>
-                        <div class="stat-card-value"><?php echo formatCurrency($stats['today']['total'] ?? 0); ?></div>
-                        <div class="stat-card-text"><?php echo $stats['today']['count'] ?? 0; ?> transactions</div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-card-title">This Week</div>
-                        <div class="stat-card-value"><?php echo formatCurrency($stats['week']['total'] ?? 0); ?></div>
-                        <div class="stat-card-text"><?php echo $stats['week']['count'] ?? 0; ?> transactions</div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-card-title">This Month</div>
-                        <div class="stat-card-value"><?php echo formatCurrency($stats['month']['total'] ?? 0); ?></div>
-                        <div class="stat-card-text"><?php echo $stats['month']['count'] ?? 0; ?> transactions</div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-card-title">Pending Approvals</div>
-                        <div class="stat-card-value"><?php echo count($pendingTransactions); ?></div>
-                        <div class="stat-card-text">Waiting for your action</div>
-                    </div>
-                </div>
+            <php 
+                <?php if(hasDepartment('Accounts') || hasDepartment('Audit/Inspections')): 
+                    include('include/dashboard-overview.php');
+                    endif;
+                 ?>
                 
                 <!-- Charts Section -->
                 <div class="row">
@@ -219,7 +109,7 @@ if (hasRole('leasing_officer')) {
                 </div>
                 
                 <!-- Recent Activity Section -->
-                <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+                <?php if(hasDepartment('admin') || hasDepartment('Accounts')): ?>
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">Today's Remittances</h5>
@@ -268,7 +158,7 @@ if (hasRole('leasing_officer')) {
                 <?php endif; ?>
                 
                 <!-- Pending Approvals Section -->
-                <?php if(hasRole('account_officer') || hasRole('auditor')): ?>
+                <?php if(hasDepartment('Accounts') || hasDepartment('Audit/Inspections')): ?>
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">Pending Approvals</h5>
@@ -299,9 +189,9 @@ if (hasRole('leasing_officer')) {
                                                 <td><?php echo $transaction['income_line']; ?></td>
                                                 <td><?php echo $transaction['posting_officer_name']; ?></td>
                                                 <td>
-                                                    <?php if(hasRole('account_officer')): ?>
+                                                    <?php if(hasDepartment('Accounts')): ?>
                                                         <span class="badge badge-warning">Awaiting Approval</span>
-                                                    <?php elseif(hasRole('auditor')): ?>
+                                                    <?php elseif(hasDepartment('Audit/Inspections')): ?>
                                                         <span class="badge badge-info">Awaiting Verification</span>
                                                     <?php endif; ?>
                                                 </td>
@@ -325,7 +215,7 @@ if (hasRole('leasing_officer')) {
                 <?php endif; ?>
                 
                 <!-- Leasing Officer Remittances -->
-                <?php if(hasRole('leasing_officer')): ?>
+                <?php if(hasDepartment('Wealth Creation')): ?>
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">My Remittances</h5>
