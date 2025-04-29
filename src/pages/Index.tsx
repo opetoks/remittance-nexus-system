@@ -1,91 +1,67 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import MainLayout from "../components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CircleDollarSign, FileText, Gauge, AlertTriangle } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { FileText, Search, FileChartColumn, FileChartPie } from "lucide-react";
 
-const Index = () => {
+export default function Index() {
   return (
-    <MainLayout>
-      <div className="flex flex-col space-y-6">
-        <h1 className="text-3xl font-bold">Income ERP Dashboard</h1>
+    <div className="container mx-auto my-8">
+      <h1 className="text-3xl font-bold mb-6">Income ERP Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileChartPie className="h-5 w-5" />
+              Income Summary
+            </CardTitle>
+            <CardDescription>
+              View and analyze income from various sources
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/income-summary">
+              <Button className="w-full">Access Income Summary</Button>
+            </Link>
+          </CardContent>
+        </Card>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₦1,234,567</div>
-              <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">25</div>
-              <p className="text-xs text-muted-foreground">Transactions waiting approval</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Power Consumption</CardTitle>
-              <Gauge className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">152</div>
-              <p className="text-xs text-muted-foreground">Active meters this month</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Issues</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">Issues need attention</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link to="/power-consumption">
-                <Button variant="outline" className="w-full justify-start">
-                  <Gauge className="mr-2 h-4 w-4" />
-                  Power Consumption Management
-                </Button>
-              </Link>
-              <Button variant="outline" className="w-full justify-start">
-                <FileText className="mr-2 h-4 w-4" />
-                Transactions
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <CircleDollarSign className="mr-2 h-4 w-4" />
-                Revenue Reports
-              </Button>
-            </CardContent>
-          </Card>
-          
-          {/* Additional dashboard content here */}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileChartColumn className="h-5 w-5" />
+              Power Consumption
+            </CardTitle>
+            <CardDescription>
+              Monitor and analyze power usage statistics
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/power-consumption">
+              <Button className="w-full">Access Power Consumption</Button>
+            </Link>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Monthly Performance Report
+            </CardTitle>
+            <CardDescription>
+              Analyze income collection summary and performance data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/mpr">
+              <Button className="w-full">Access MPR</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
-    </MainLayout>
+    </div>
   );
-};
-
-export default Index;
+}
