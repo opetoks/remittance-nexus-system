@@ -77,6 +77,39 @@ $page_title = "Monthly Performance Report (MPR)";
             align-items: center;
             min-height: 300px;
         }
+        /* Fix for proper spacing */
+        .content-body {
+            padding: 20px;
+        }
+        .row {
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        /* Adjusting the form layout */
+        #mprPeriodForm .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        #mprPeriodForm .col-sm-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+            padding-right: 10px;
+        }
+        #mprPeriodForm .col-sm-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #mprPeriodForm .col-sm-3, 
+            #mprPeriodForm .col-sm-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+                margin-bottom: 10px;
+            }
+        }
     </style>
 </head>
 
@@ -108,7 +141,7 @@ $page_title = "Monthly Performance Report (MPR)";
                     <div class="col-md-12">
                         <form id="mprPeriodForm" class="mb-4">
                             <div class="row align-items-end">
-                                <div class="col-md-3">
+                                <div class="col-sm-3">
                                     <div class="form-group">
                                         <label for="smonth" class="form-label">Month</label>
                                         <div class="input-group">
@@ -129,7 +162,7 @@ $page_title = "Monthly Performance Report (MPR)";
                                     </div>
                                 </div>
                                 
-                                <div class="col-md-3">
+                                <div class="col-sm-3">
                                     <div class="form-group">
                                         <label for="syear" class="form-label">Year</label>
                                         <div class="input-group">
