@@ -87,20 +87,6 @@ function requireAnyRole($roles = []) {
     }
 }
 
-function requireAnyDepartment($departments = []) {
-    global $userId;
-    $user = new User();
-    if (!isLoggedIn()) {
-        redirect('login.php');
-    }
-
-    $userId = getLoggedInUserId();
-    $department = $user->getDepartmentByUserIdstring($userId); // make sure this function exists
-
-    if (!in_array($department, $departments)) {
-        redirect('unauthorized.php');
-    }
-}
 
 
 // General redirect function

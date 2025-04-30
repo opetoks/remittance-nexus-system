@@ -173,7 +173,7 @@ class Transaction {
     // Get all transactions
     public function getTransactions() {
         // Prepare query
-        $this->db->query('SELECT * FROM account_general_transaction_new ORDER BY posting_time DESC');
+        $this->db->query('SELECT * FROM account_general_transaction_new ORDER BY posting_time DESC LIMIT 100');
         
         // Get result set
         return $this->db->resultSet();

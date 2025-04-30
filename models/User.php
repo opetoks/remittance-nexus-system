@@ -256,5 +256,19 @@ class User {
             return false;
         }
     }
+
+    // Require login and specific department access
+    // public function requireAnyDepartment($departments = []) {
+    //     if (!isLoggedIn()) {
+    //         redirect('login.php');
+    //     }
+
+    //     $userId = getLoggedInUserId();
+    //     $department = $this->getDepartmentByUserIdstring($userId);
+
+    //     if (!in_array(strtolower($department), array_map('strtolower', $departments))) {
+    //         redirect('unauthorized.php');
+    //     }
+    // }
 }
 ?>

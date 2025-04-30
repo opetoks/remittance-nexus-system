@@ -8,6 +8,28 @@ require_once 'helpers/session_helper.php';
 // Check if user is logged in and has proper role
 requireLogin();
 $userId = getLoggedInUserId();
+function requireAnyDepartment($departments = []) {
+    if (!isLoggedIn()) {
+        redirect('login.php');
+    }
+
+    $userId = getLoggedInUserId();
+    
+    require_once 'config/Database.php'; // make sure Database is loaded if not already
+    $db = new Database();
+
+    // Query the department directly
+    $db->query('SELECT department FROM staffs WHERE user_id = :userId LIMIT 1');
+    $db->bind(':userId', $userId);
+    $result = $db->single();
+
+    $department = $result ? $result['department'] : null;
+
+    if (!in_array($department, $departments)) {
+        redirect('unauthorized.php');
+    }
+}
+
 requireAnyDepartment(['IT/E-Business', 'Accounts']);
 
 // Initialize objects
@@ -310,33 +332,77 @@ $remittances = $remittanceModel->getRemittances();
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        $(document).ready(function() {
-            $('#remittancesTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: 'api/get_remittances.php',
-                    type: 'POST'
+        $('#remittancesTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: 'api/get_remittances.php',
+                type: 'POST',
+                dataSrc: function(json) {
+                    console.log('Response from server:', json); // See everything returned
+                    return json.data;
                 },
-                pageLength: 10,
-                columns: [
-                    { data: 0 }, // Remit ID
-                    { data: 1 }, // Date
-                    { data: 2 }, // Amount
-                    { data: 3 }, // No. of Receipts
-                    { data: 4 }, // Category
-                    { data: 5 }, // Remitting Officer
-                    { data: 6 }, // Posted By
-                    { data: 7 }, // Status
-                    { data: 8, orderable: false } // Actions
-                ],
-                order: [[1, 'desc']], // Order by date descending
-                responsive: true,
-                language: {
-                    processing: '<i class="fas fa-spinner fa-spin fa-2x"></i>'
+                error: function(xhr, error, thrown) {
+                    console.error('AJAX error:', xhr.responseText); // In case your PHP throws an error
                 }
-            });
+            },
+            pageLength: 10,
+            columns: [
+                { data: 'remit_id' },
+                { data: 'date' },
+                { data: 'amount_paid' },
+                { data: 'no_of_receipts' },
+                { data: 'category' },
+                { data: 'remitting_officer_name' },
+                { data: 'posting_officer_name' },
+                { data: 'status' },
+                { data: 'actions', orderable: false }
+            ],
+            order: [[1, 'desc']],
+            responsive: true,
+            language: {
+                processing: '<i class="fas fa-spinner fa-spin fa-2x"></i>'
+            }
         });
+
+        // $(document).ready(function() {
+        //     $('#remittancesTable').DataTable({
+        //         processing: true,
+        //         serverSide: true,
+        //         ajax: {
+        //             url: 'api/get_remittances.php',
+        //             type: 'POST'
+        //         },
+        //         pageLength: 10,
+        //         // columns: [
+        //         //     { data: 0 }, // Remit ID
+        //         //     { data: 1 }, // Date
+        //         //     { data: 2 }, // Amount
+        //         //     { data: 3 }, // No. of Receipts
+        //         //     { data: 4 }, // Category
+        //         //     { data: 5 }, // Remitting Officer
+        //         //     { data: 6 }, // Posted By
+        //         //     { data: 7 }, // Status
+        //         //     { data: 8, orderable: false } // Actions
+        //         // ]
+        //         columns: [
+        //             { data: 'remit_id' },          // Remit ID
+        //             { data: 'date' },              // Date
+        //             { data: 'amount_paid' },       // Amount
+        //             { data: 'no_of_receipts' },    // No. of Receipts
+        //             { data: 'category' },          // Category
+        //             { data: 'remitting_officer_name' }, // Remitting Officer
+        //             { data: 'posting_officer_name' },   // Posted By
+        //             { data: 'status' },            // Status
+        //             { data: 'actions', orderable: false } // Actions
+        //         ],
+        //         order: [[1, 'desc']], // Order by date descending
+        //         responsive: true,
+        //         language: {
+        //             processing: '<i class="fas fa-spinner fa-spin fa-2x"></i>'
+        //         }
+        //     });
+        // });
     </script>
     <script src="assets/js/main.js"></script>
 </body>
