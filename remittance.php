@@ -319,6 +319,9 @@ $remittances = $remittanceModel->getRemittances();
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -364,45 +367,6 @@ $remittances = $remittanceModel->getRemittances();
                 processing: '<i class="fas fa-spinner fa-spin fa-2x"></i>'
             }
         });
-
-        // $(document).ready(function() {
-        //     $('#remittancesTable').DataTable({
-        //         processing: true,
-        //         serverSide: true,
-        //         ajax: {
-        //             url: 'api/get_remittances.php',
-        //             type: 'POST'
-        //         },
-        //         pageLength: 10,
-        //         // columns: [
-        //         //     { data: 0 }, // Remit ID
-        //         //     { data: 1 }, // Date
-        //         //     { data: 2 }, // Amount
-        //         //     { data: 3 }, // No. of Receipts
-        //         //     { data: 4 }, // Category
-        //         //     { data: 5 }, // Remitting Officer
-        //         //     { data: 6 }, // Posted By
-        //         //     { data: 7 }, // Status
-        //         //     { data: 8, orderable: false } // Actions
-        //         // ]
-        //         columns: [
-        //             { data: 'remit_id' },          // Remit ID
-        //             { data: 'date' },              // Date
-        //             { data: 'amount_paid' },       // Amount
-        //             { data: 'no_of_receipts' },    // No. of Receipts
-        //             { data: 'category' },          // Category
-        //             { data: 'remitting_officer_name' }, // Remitting Officer
-        //             { data: 'posting_officer_name' },   // Posted By
-        //             { data: 'status' },            // Status
-        //             { data: 'actions', orderable: false } // Actions
-        //         ],
-        //         order: [[1, 'desc']], // Order by date descending
-        //         responsive: true,
-        //         language: {
-        //             processing: '<i class="fas fa-spinner fa-spin fa-2x"></i>'
-        //         }
-        //     });
-        // });
     </script>
     <script src="assets/js/main.js"></script>
 </body>
