@@ -22,6 +22,7 @@ $page_title = "Monthly Performance Report (MPR)";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
@@ -45,6 +46,39 @@ $page_title = "Monthly Performance Report (MPR)";
             justify-content: center;
             align-items: center;
             min-height: 300px;
+        }
+        /* Fix for proper spacing */
+        .content-body {
+            padding: 20px;
+        }
+        .row {
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        /* Adjusting the form layout */
+        #mprPeriodForm .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        #mprPeriodForm .col-sm-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+            padding-right: 10px;
+        }
+        #mprPeriodForm .col-sm-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #mprPeriodForm .col-sm-3, 
+            #mprPeriodForm .col-sm-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -71,13 +105,13 @@ $page_title = "Monthly Performance Report (MPR)";
             </header>
             
             <!-- Content Body -->
-            <div class="content-body">
+            <div class="content-body container-fluid">
                 <!-- Period Selection Form -->
                 <div class="row mb-4">
-                    <div class="col-md-12">
+                    <div class="col-12">
                         <form id="mprPeriodForm" class="mb-4">
                             <div class="row align-items-end">
-                                <div class="col-sm-3">
+                                <div class="col-md-3 col-sm-6">
                                     <div class="form-group">
                                         <label for="smonth" class="form-label">Month</label>
                                         <div class="input-group">
@@ -98,7 +132,7 @@ $page_title = "Monthly Performance Report (MPR)";
                                     </div>
                                 </div>
                                 
-                                <div class="col-sm-3">
+                                <div class="col-md-3 col-sm-6">
                                     <div class="form-group">
                                         <label for="syear" class="form-label">Year</label>
                                         <div class="input-group">
@@ -117,13 +151,15 @@ $page_title = "Monthly Performance Report (MPR)";
                                     </div>
                                 </div>
                                 
-                                <div class="col-sm-6">
-                                    <button type="submit" class="btn btn-success">
-                                        <i class="fas fa-sync-alt"></i> Load
-                                    </button>
-                                    <a href="mpr_officers.php" class="btn btn-danger">
-                                        <i class="fas fa-users"></i> View Officer Summary
-                                    </a>
+                                <div class="col-md-6 col-sm-12">
+                                    <div class="mt-2 mt-md-0">
+                                        <button type="submit" class="btn btn-success me-2">
+                                            <i class="fas fa-sync-alt"></i> Load
+                                        </button>
+                                        <a href="mpr_officers.php" class="btn btn-danger">
+                                            <i class="fas fa-users"></i> View Officer Summary
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </form>
@@ -131,37 +167,49 @@ $page_title = "Monthly Performance Report (MPR)";
                 </div>
                 
                 <!-- MPR Summary Card -->
-                <div class="card mb-4">
-                    <div class="card-header bg-red-100 text-red-800">
-                        <h5 class="card-title mb-0" id="periodDisplay">
-                            <i class="fas fa-file-alt me-2"></i>
-                            Loading...
-                        </h5>
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-red-100 text-red-800">
+                                <h5 class="card-title mb-0" id="periodDisplay">
+                                    <i class="fas fa-file-alt me-2"></i>
+                                    Loading...
+                                </h5>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Search & Export Controls -->
-                <div class="d-flex justify-content-between mb-3">
-                    <div>
-                        <button id="copyButton" class="btn btn-outline-secondary me-2">
-                            <i class="fas fa-copy"></i> Copy
-                        </button>
-                        <button id="excelButton" class="btn btn-outline-success">
-                            <i class="fas fa-file-excel"></i> Excel
-                        </button>
-                    </div>
-                    
-                    <div class="d-flex align-items-center">
-                        <label for="tableSearch" class="me-2">Search:</label>
-                        <input type="text" id="tableSearch" class="form-control form-control-sm" placeholder="Filter income lines...">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center">
+                            <div class="mb-2 mb-md-0">
+                                <button id="copyButton" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                                <button id="excelButton" class="btn btn-outline-success">
+                                    <i class="fas fa-file-excel"></i> Excel
+                                </button>
+                            </div>
+                            
+                            <div class="d-flex align-items-center">
+                                <label for="tableSearch" class="me-2">Search:</label>
+                                <input type="text" id="tableSearch" class="form-control form-control-sm" placeholder="Filter income lines...">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- MPR Table Container -->
-                <div id="mprTableContainer" class="table-responsive">
-                    <div class="loading">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                <div class="row">
+                    <div class="col-12">
+                        <div id="mprTableContainer" class="table-responsive">
+                            <div class="loading">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -170,6 +218,7 @@ $page_title = "Monthly Performance Report (MPR)";
     </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
