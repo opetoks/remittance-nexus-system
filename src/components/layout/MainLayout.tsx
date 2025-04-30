@@ -15,8 +15,12 @@ const MainLayout = ({ children }: Props) => {
         <div className="flex-1 flex flex-col bg-background">
           {/* Top bar with profile and logout */}
           <div className="flex items-center justify-end px-6 py-4 border-b">
-            {/* Place your profile and logout (top right) here, possibly as a separate ProfileMenu component */}
-            {/* Example: <ProfileMenu /> */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium">Admin User</span>
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                <span className="text-xs font-medium">AU</span>
+              </div>
+            </div>
           </div>
           <main className="p-6 flex-1">{children}</main>
         </div>
