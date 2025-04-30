@@ -8,6 +8,37 @@ require_once 'helpers/session_helper.php';
 
 // Check if user is logged in
 requireLogin();
+$userId = getLoggedInUserId();
+
+// Initialize objects
+$db = new Database();
+$user = new User();
+// Get current user information
+$currentUser = $user->getUserById($userId);
+
+// function requireAnyDepartment($departments = []) {
+//     if (!isLoggedIn()) {
+//         redirect('login.php');
+//     }
+
+//     $userId = getLoggedInUserId();
+    
+//     require_once 'config/Database.php'; // make sure Database is loaded if not already
+//     $db = new Database();
+
+//     // Query the department directly
+//     $db->query('SELECT department FROM staffs WHERE user_id = :userId LIMIT 1');
+//     $db->bind(':userId', $userId);
+//     $result = $db->single();
+
+//     $department = $result ? $result['department'] : null;
+
+//     if (!in_array($department, $departments)) {
+//         redirect('unauthorized.php');
+//     }
+// }
+
+//requireAnyDepartment(['IT/E-Business', 'Accounts', 'Wealth Creation']);
 
 // Page title
 $page_title = "Monthly Performance Report (MPR)";
@@ -68,7 +99,7 @@ $page_title = "Monthly Performance Report (MPR)";
                 <div class="header-right">
                     <?php include_once 'includes/user_dropdown.php'; ?>
                 </div>
-            </header>
+            </header> 
             
             <!-- Content Body -->
             <div class="content-body">
@@ -77,7 +108,7 @@ $page_title = "Monthly Performance Report (MPR)";
                     <div class="col-md-12">
                         <form id="mprPeriodForm" class="mb-4">
                             <div class="row align-items-end">
-                                <div class="col-sm-3">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="smonth" class="form-label">Month</label>
                                         <div class="input-group">
@@ -98,7 +129,7 @@ $page_title = "Monthly Performance Report (MPR)";
                                     </div>
                                 </div>
                                 
-                                <div class="col-sm-3">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="syear" class="form-label">Year</label>
                                         <div class="input-group">

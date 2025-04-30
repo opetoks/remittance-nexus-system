@@ -13,25 +13,25 @@
             <i class="fas fa-tachometer-alt"></i> Dashboard
         </a>
         
-        <?php if(hasRole('admin') || hasRole('account_officer')): ?>
+        <?php if(hasDepartment('IT/E-Business') || hasDepartment('Accounts')): ?>
         <a href="remittance.php" class="sidebar-menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'remittance.php' ? 'active' : ''; ?>">
             <i class="fas fa-money-bill-wave"></i> Remittances
         </a>
         <?php endif; ?>
         
-        <?php if(hasRole('leasing_officer')): ?>
+        <?php if(hasDepartment('Wealth Creation')): ?>
         <a href="post_collection.php" class="sidebar-menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'post_collection.php' ? 'active' : ''; ?>">
             <i class="fas fa-receipt"></i> Post Collections
         </a>
         <?php endif; ?>
         
-        <?php if(hasRole('account_officer')): ?>
+        <?php if(hasDepartment('Accounts')): ?>
         <a href="approve_posts.php" class="sidebar-menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'approve_posts.php' ? 'active' : ''; ?>">
             <i class="fas fa-check-circle"></i> Approve Posts
         </a>
         <?php endif; ?>
         
-        <?php if(hasRole('auditor')): ?>
+        <?php if(hasDepartment('Audit/Inspections')): ?>
         <a href="verify_transactions.php" class="sidebar-menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'verify_transactions.php' ? 'active' : ''; ?>">
             <i class="fas fa-clipboard-check"></i> Verify Transactions
         </a>
@@ -45,7 +45,7 @@
             <i class="fas fa-file-alt"></i> MPR
         </a>
         
-        <?php if(hasRole('admin')): ?>
+        <?php if(hasDepartment('IT/E-Business')): ?>
         <div class="sidebar-menu-title">ADMINISTRATION</div>
         
         <a href="accounts.php" class="sidebar-menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'accounts.php' ? 'active' : ''; ?>">

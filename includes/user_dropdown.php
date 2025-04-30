@@ -4,7 +4,7 @@
         <div class="avatar">
             <i class="fas fa-user"></i>
         </div>
-        <span class="name"><?php echo $_SESSION['user_name']; ?></span>
+        <span class="name"><?php echo $currentUser['full_name']; ?></span>
         <i class="fas fa-chevron-down"></i>
     </button>
     

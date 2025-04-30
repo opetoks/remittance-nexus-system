@@ -151,7 +151,7 @@ $remittances = $remittanceModel->getRemittances();
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasDepartment('leasing_officer')): ?>
+                <?php if(hasDepartment('Wealth Creation')): ?>
                 <a href="post_collection.php" class="sidebar-menu-item">
                     <i class="fas fa-receipt"></i> Post Collections
                 </a>
@@ -163,7 +163,7 @@ $remittances = $remittanceModel->getRemittances();
                 </a>
                 <?php endif; ?>
                 
-                <?php if(hasDepartment('auditor')): ?>
+                <?php if(hasDepartment('Audit/Inspections')): ?>
                 <a href="verify_transactions.php" class="sidebar-menu-item">
                     <i class="fas fa-clipboard-check"></i> Verify Transactions
                 </a>
@@ -173,7 +173,7 @@ $remittances = $remittanceModel->getRemittances();
                     <i class="fas fa-exchange-alt"></i> Transactions
                 </a>
                 
-                <?php if(hasDepartment('admin')): ?>
+                <?php if(hasDepartment('IT/E-Business')): ?>
                 <div class="sidebar-menu-title">ADMINISTRATION</div>
                 
                 <a href="accounts.php" class="sidebar-menu-item">
