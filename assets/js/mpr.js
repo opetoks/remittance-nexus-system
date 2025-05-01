@@ -129,8 +129,8 @@ $(document).ready(function() {
         tableHtml += `
                 </tbody>
                 <tfoot>
-                    <tr class="bg-light">
-                        <th>Total</th>
+                    <tr class="totals-row">
+                        <th>Daily Totals</th>
         `;
         
         // Add day totals
@@ -149,7 +149,7 @@ $(document).ready(function() {
         
         // Add grand total
         tableHtml += `
-                        <th class="text-right">${formatNumber(data.totals.grandTotal)}</th>
+                        <th class="text-right grand-total">${formatNumber(data.totals.grandTotal)}</th>
                     </tr>
                 </tfoot>
             </table>

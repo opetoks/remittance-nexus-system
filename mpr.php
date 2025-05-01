@@ -53,6 +53,7 @@ $page_title = "Monthly Performance Report (MPR)";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
@@ -109,6 +110,16 @@ $page_title = "Monthly Performance Report (MPR)";
                 max-width: 100%;
                 margin-bottom: 10px;
             }
+        }
+        /* Total row highlighting */
+        .totals-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .grand-total {
+            background-color: #e9ecef;
+            font-weight: bold;
+            color: #495057;
         }
     </style>
 </head>
@@ -234,6 +245,7 @@ $page_title = "Monthly Performance Report (MPR)";
     </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
