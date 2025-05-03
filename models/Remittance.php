@@ -135,6 +135,27 @@ class Remittance {
         return false;
     }
     
+    // Get remittances from the past 3 years to present year
+    public function getRemittancesLastThreeYears() {
+        // Calculate start date (3 years ago from today)
+        $currentYear = date('Y');
+        $startYear = $currentYear - 3;
+        $startDate = $startYear . '-01-01';
+        $endDate = $currentYear . '-12-31';
+        
+        // Prepare query to get remittances within the date range
+        $this->db->query('SELECT * FROM cash_remittance 
+                          WHERE date BETWEEN :startDate AND :endDate 
+                          ORDER BY date DESC, remitting_time DESC');
+        
+        // Bind values
+        $this->db->bind(':startDate', $startDate);
+        $this->db->bind(':endDate', $endDate);
+        
+        // Execute and return results
+        return $this->db->resultSet();
+    }
+    
     // Get paginated remittances with search and sort
     public function getPaginatedRemittances($start, $length, $search, $order_column, $order_dir) {
         // Base query for total records
@@ -150,17 +171,12 @@ class Remittance {
         }
         
         // Get total records
-        $this->db->query("SELECT COUNT(*) as total " . $baseQuery);
-        $totalRecords = $this->db->single()['total'];
-        
-        // Get filtered records count
+        $this->db->query("SELECT COUNT(*) as total " . $baseQuery . $whereClause);
         if (!empty($search)) {
-            $this->db->query("SELECT COUNT(*) as filtered " . $baseQuery . $whereClause);
-            $this->db->bind(':search', "%{$search}%");
-            $filteredRecords = $this->db->single()['filtered'];
-        } else {
-            $filteredRecords = $totalRecords;
+            $searchParam = "%{$search}%";
+            $this->db->bind(':search', $searchParam);
         }
+        $totalRecords = $this->db->single()['total'];
         
         // Column mapping for ordering
         $columns = [
@@ -177,25 +193,22 @@ class Remittance {
         $mainQuery = "SELECT * " . $baseQuery . $whereClause;
         if (isset($columns[$order_column])) {
             $mainQuery .= " ORDER BY " . $columns[$order_column] . " " . $order_dir;
-        } else {
-            $mainQuery .= " ORDER BY date DESC, remitting_time DESC";
         }
         $mainQuery .= " LIMIT :start, :length";
         
         // Execute main query
         $this->db->query($mainQuery);
         if (!empty($search)) {
-            $this->db->bind(':search', "%{$search}%");
+            $this->db->bind(':search', $searchParam);
         }
-        $this->db->bind(':start', $start, PDO::PARAM_INT);
-        $this->db->bind(':length', $length, PDO::PARAM_INT);
+        $this->db->bind(':start', (int)$start, PDO::PARAM_INT);
+        $this->db->bind(':length', (int)$length, PDO::PARAM_INT);
         
         $results = $this->db->resultSet();
         
         return [
             'data' => $results,
-            'total' => $totalRecords,
-            'filtered' => $filteredRecords
+            'total' => $totalRecords
         ];
     }
 }
