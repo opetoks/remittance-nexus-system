@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/Database.php';
 require_once 'models/Account.php';
@@ -201,6 +200,18 @@ class Transaction {
         
         // Get result set
         return $this->db->resultSet();
+    }
+    
+    // Get transaction by receipt number
+    public function getTransactionByReceiptNo($receipt_no) {
+        // Prepare query
+        $this->db->query('SELECT * FROM account_general_transaction_new WHERE receipt_no = :receipt_no');
+        
+        // Bind value
+        $this->db->bind(':receipt_no', $receipt_no);
+        
+        // Get single record
+        return $this->db->single();
     }
     
     // Get pending transactions for leasing approval
