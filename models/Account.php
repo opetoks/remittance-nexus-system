@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/Database.php';
 
@@ -127,6 +126,24 @@ class Account {
         } else {
             return false;
         }
+    }
+    
+    // Get all debit accounts (typically cash or bank accounts)
+    public function getDebitAccounts() {
+        // Prepare query for accounts that are typically used for debits (cash accounts, bank accounts)
+        $this->db->query('SELECT * FROM accounts WHERE acct_class = "Asset" AND active = TRUE ORDER BY acct_desc ASC');
+        
+        // Get result set
+        return $this->db->resultSet();
+    }
+    
+    // Get all income accounts (for credit operations)
+    public function getIncomeAccounts() {
+        // Prepare query for accounts that are income accounts
+        $this->db->query('SELECT * FROM accounts WHERE acct_class = "Income" AND active = TRUE ORDER BY acct_desc ASC');
+        
+        // Get result set
+        return $this->db->resultSet();
     }
 }
 ?>
