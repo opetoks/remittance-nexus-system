@@ -1,3 +1,4 @@
+
 <?php
 require_once 'config/Database.php';
 
@@ -162,12 +163,17 @@ class Remittance {
         $baseQuery = 'FROM cash_remittance';
         $whereClause = '';
         
+        // Date limit - only show remittances from 30th December 2022 onwards
+        $dateLimitClause = " WHERE date >= '2022-12-30'";
+        
         // Search condition
         if (!empty($search)) {
-            $whereClause = " WHERE remit_id LIKE :search 
+            $whereClause = $dateLimitClause . " AND (remit_id LIKE :search 
                             OR remitting_officer_name LIKE :search 
                             OR posting_officer_name LIKE :search 
-                            OR category LIKE :search";
+                            OR category LIKE :search)";
+        } else {
+            $whereClause = $dateLimitClause;
         }
         
         // Get total records
