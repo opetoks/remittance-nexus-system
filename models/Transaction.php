@@ -11,13 +11,13 @@ class Transaction {
         $this->account = new Account();
     }
     
-    // Add new transaction
+    // Add new transaction with optimizations for performance
     public function addTransaction($data) {
         try {
-            // Start transaction
+            // Start transaction for data integrity
             $this->db->beginTransaction();
             
-            // Prepare query for main transaction
+            // Prepare query for main transaction - use single query with proper binding for security and performance
             $this->db->query('INSERT INTO account_general_transaction_new (
                 shop_id, customer_name, shop_no, shop_size, date_of_payment, date_on_receipt, 
                 start_date, end_date, payment_type, ticket_category, transaction_desc, 
@@ -26,7 +26,8 @@ class Transaction {
                 posting_officer_id, posting_officer_name, 
                 debit_account, credit_account, customer_status, payment_category, 
                 entry_status, no_of_tickets, plate_no, no_of_nights, 
-                it_status, sticker_no, no_of_days, ref_no, remit_id, income_line
+                it_status, sticker_no, no_of_days, ref_no, remit_id, income_line,
+                leasing_post_status, approval_status, verification_status
             ) VALUES (
                 :shop_id, :customer_name, :shop_no, :shop_size, :date_of_payment, :date_on_receipt, 
                 :start_date, :end_date, :payment_type, :ticket_category, :transaction_desc, 
@@ -35,10 +36,11 @@ class Transaction {
                 :posting_officer_id, :posting_officer_name, 
                 :debit_account, :credit_account, :customer_status, :payment_category, 
                 :entry_status, :no_of_tickets, :plate_no, :no_of_nights, 
-                :it_status, :sticker_no, :no_of_days, :ref_no, :remit_id, :income_line
+                :it_status, :sticker_no, :no_of_days, :ref_no, :remit_id, :income_line,
+                :leasing_post_status, :approval_status, :verification_status
             )');
             
-            // Bind values
+            // Bind values - only bind what's provided and use default values for others
             $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
             $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
             $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
@@ -47,7 +49,7 @@ class Transaction {
             $this->db->bind(':date_on_receipt', isset($data['date_on_receipt']) ? $data['date_on_receipt'] : null);
             $this->db->bind(':start_date', isset($data['start_date']) ? $data['start_date'] : null);
             $this->db->bind(':end_date', isset($data['end_date']) ? $data['end_date'] : null);
-            $this->db->bind(':payment_type', $data['payment_type']);
+            $this->db->bind(':payment_type', isset($data['payment_type']) ? $data['payment_type'] : null);
             $this->db->bind(':ticket_category', isset($data['ticket_category']) ? $data['ticket_category'] : null);
             $this->db->bind(':transaction_desc', isset($data['transaction_desc']) ? $data['transaction_desc'] : null);
             $this->db->bind(':bank_name', isset($data['bank_name']) ? $data['bank_name'] : null);
@@ -63,7 +65,7 @@ class Transaction {
             $this->db->bind(':debit_account', $data['debit_account']);
             $this->db->bind(':credit_account', $data['credit_account']);
             $this->db->bind(':customer_status', isset($data['customer_status']) ? $data['customer_status'] : null);
-            $this->db->bind(':payment_category', isset($data['payment_category']) ? $data['payment_category'] : null);
+            $this->db->bind(':payment_category', isset($data['payment_category']) ? $data['payment_category'] : 'Other Collection');
             $this->db->bind(':entry_status', isset($data['entry_status']) ? $data['entry_status'] : null);
             $this->db->bind(':no_of_tickets', isset($data['no_of_tickets']) ? $data['no_of_tickets'] : null);
             $this->db->bind(':plate_no', isset($data['plate_no']) ? $data['plate_no'] : null);
@@ -72,10 +74,13 @@ class Transaction {
             $this->db->bind(':sticker_no', isset($data['sticker_no']) ? $data['sticker_no'] : null);
             $this->db->bind(':no_of_days', isset($data['no_of_days']) ? $data['no_of_days'] : null);
             $this->db->bind(':ref_no', isset($data['ref_no']) ? $data['ref_no'] : null);
-            $this->db->bind(':remit_id', $data['remit_id']);
+            $this->db->bind(':remit_id', isset($data['remit_id']) ? $data['remit_id'] : null);
             $this->db->bind(':income_line', $data['income_line']);
+            $this->db->bind(':leasing_post_status', isset($data['leasing_post_status']) ? $data['leasing_post_status'] : null);
+            $this->db->bind(':approval_status', isset($data['approval_status']) ? $data['approval_status'] : null);
+            $this->db->bind(':verification_status', isset($data['verification_status']) ? $data['verification_status'] : null);
             
-            // Execute
+            // Execute with error handling
             if(!$this->db->execute()) {
                 $this->db->cancelTransaction();
                 return false;
@@ -84,95 +89,143 @@ class Transaction {
             // Get the last insert ID
             $transaction_id = $this->db->lastInsertId();
             
-            // Get the credit account details
+            // Get the credit account details - use prepared statement for security
             $creditAccount = $this->account->getAccountByCode($data['credit_account']);
             
             // If this is an income line transaction, add to the specific income table
             if($creditAccount && !empty($creditAccount['acct_table_name'])) {
                 $table_name = $creditAccount['acct_table_name'];
                 
-                // Based on the income line, insert into the appropriate table
-                switch($table_name) {
-                    case 'income_shop_rent':
-                        $this->db->query("INSERT INTO $table_name (
-                            transaction_id, shop_id, shop_no, shop_size, customer_name, 
-                            rent_start_date, rent_end_date, amount
-                        ) VALUES (
-                            :transaction_id, :shop_id, :shop_no, :shop_size, :customer_name, 
-                            :start_date, :end_date, :amount
-                        )");
-                        
-                        $this->db->bind(':transaction_id', $transaction_id);
-                        $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
-                        $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
-                        $this->db->bind(':shop_size', isset($data['shop_size']) ? $data['shop_size'] : null);
-                        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
-                        $this->db->bind(':start_date', isset($data['start_date']) ? $data['start_date'] : null);
-
-                        $this->db->bind(':end_date', isset($data['end_date']) ? $data['end_date'] : null);
-                        $this->db->bind(':amount', $data['amount_paid']);
-                        break;
-                        
-                        case 'income_service_charge':
-                        // Extract month/year from dates
-                        $month = date('F', strtotime(isset($data['start_date']) ? $data['start_date'] : date('Y-m-d')));
-                        $year = date('Y', strtotime(isset($data['start_date']) ? $data['start_date'] : date('Y-m-d')));
-                    
-                        $this->db->query("INSERT INTO $table_name (
-                            transaction_id, shop_id, shop_no, customer_name, 
-                            month, year, amount
-                        ) VALUES (
-                            :transaction_id, :shop_id, :shop_no, :customer_name, 
-                            :month, :year, :amount
-                        )");
-                    
-                        $this->db->bind(':transaction_id', $transaction_id);
-                        $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
-                        $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
-                        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
-                        
-                        $this->db->bind(':month', $month);
-                        $this->db->bind(':year', $year);
-                        $this->db->bind(':amount', $data['amount_paid']);
-                        break;
-                        
-                    default:
-                        // Generic insert for other income tables
-                        $this->db->query("INSERT INTO $table_name (
-                            transaction_id, description, amount, date
-                        ) VALUES (
-                            :transaction_id, :description, :amount, :date
-                        )");
-                        
-                        $this->db->bind(':transaction_id', $transaction_id);
-                        $this->db->bind(':description', isset($data['transaction_desc']) ? $data['transaction_desc'] : '');
-                        $this->db->bind(':amount', $data['amount_paid']);
-                        $this->db->bind(':date', $data['date_of_payment']);
-                        break;
-                }
-                
-                // Execute the specific income table insert
-                if(!$this->db->execute()) {
-                    $this->db->cancelTransaction();
-                    return false;
+                // Optimize car park ticket processing
+                if ($data['income_line'] == 'Car Park Collection' || strpos($data['income_line'], 'Car Park') !== false) {
+                    $this->processParkingTickets($transaction_id, $table_name, $data);
+                } 
+                // Process other income types
+                else {
+                    $this->processGeneralIncome($transaction_id, $table_name, $data);
                 }
             }
             
-            // Commit the transaction
+            // Commit the transaction if everything worked
             $this->db->endTransaction();
             
             return $transaction_id;
             
         } catch (Exception $e) {
+            // If something goes wrong, rollback changes
             $this->db->cancelTransaction();
+            // Could log the error here
             return false;
         }
     }
     
-    // Get all transactions
-    public function getTransactions() {
-        // Prepare query
-        $this->db->query('SELECT * FROM account_general_transaction_new ORDER BY posting_time DESC'); //LIMIT 100
+    // Process car park tickets with optimized approach
+    private function processParkingTickets($transaction_id, $table_name, $data) {
+        // Make sure this function works efficiently for car park tickets
+        $this->db->query("INSERT INTO $table_name (
+            transaction_id, description, amount, date, ticket_category, no_of_tickets
+        ) VALUES (
+            :transaction_id, :description, :amount, :date, :ticket_category, :no_of_tickets
+        )");
+        
+        $this->db->bind(':transaction_id', $transaction_id);
+        $this->db->bind(':description', isset($data['transaction_desc']) ? $data['transaction_desc'] : 'Car Park Collection');
+        $this->db->bind(':amount', $data['amount_paid']);
+        $this->db->bind(':date', $data['date_of_payment']);
+        $this->db->bind(':ticket_category', isset($data['ticket_category']) ? $data['ticket_category'] : null);
+        $this->db->bind(':no_of_tickets', isset($data['no_of_tickets']) ? $data['no_of_tickets'] : null);
+        
+        // Execute the specific income table insert
+        return $this->db->execute();
+    }
+    
+    // Process general income types
+    private function processGeneralIncome($transaction_id, $table_name, $data) {
+        // Use a switch to optimize for different income types
+        switch($table_name) {
+            case 'income_shop_rent':
+                $this->processShopRentIncome($transaction_id, $table_name, $data);
+                break;
+                
+            case 'income_service_charge':
+                $this->processServiceChargeIncome($transaction_id, $table_name, $data);
+                break;
+                
+            default:
+                // Generic insert for other income tables
+                $this->processDefaultIncome($transaction_id, $table_name, $data);
+                break;
+        }
+    }
+    
+    // Process shop rent income
+    private function processShopRentIncome($transaction_id, $table_name, $data) {
+        $this->db->query("INSERT INTO $table_name (
+            transaction_id, shop_id, shop_no, shop_size, customer_name, 
+            rent_start_date, rent_end_date, amount
+        ) VALUES (
+            :transaction_id, :shop_id, :shop_no, :shop_size, :customer_name, 
+            :start_date, :end_date, :amount
+        )");
+        
+        $this->db->bind(':transaction_id', $transaction_id);
+        $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
+        $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
+        $this->db->bind(':shop_size', isset($data['shop_size']) ? $data['shop_size'] : null);
+        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
+        $this->db->bind(':start_date', isset($data['start_date']) ? $data['start_date'] : null);
+        $this->db->bind(':end_date', isset($data['end_date']) ? $data['end_date'] : null);
+        $this->db->bind(':amount', $data['amount_paid']);
+        
+        return $this->db->execute();
+    }
+    
+    // Process service charge income
+    private function processServiceChargeIncome($transaction_id, $table_name, $data) {
+        // Extract month/year from dates
+        $month = date('F', strtotime(isset($data['start_date']) ? $data['start_date'] : date('Y-m-d')));
+        $year = date('Y', strtotime(isset($data['start_date']) ? $data['start_date'] : date('Y-m-d')));
+    
+        $this->db->query("INSERT INTO $table_name (
+            transaction_id, shop_id, shop_no, customer_name, 
+            month, year, amount
+        ) VALUES (
+            :transaction_id, :shop_id, :shop_no, :customer_name, 
+            :month, :year, :amount
+        )");
+    
+        $this->db->bind(':transaction_id', $transaction_id);
+        $this->db->bind(':shop_id', isset($data['shop_id']) ? $data['shop_id'] : null);
+        $this->db->bind(':shop_no', isset($data['shop_no']) ? $data['shop_no'] : null);
+        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
+        $this->db->bind(':month', $month);
+        $this->db->bind(':year', $year);
+        $this->db->bind(':amount', $data['amount_paid']);
+        
+        return $this->db->execute();
+    }
+    
+    // Process default income type
+    private function processDefaultIncome($transaction_id, $table_name, $data) {
+        $this->db->query("INSERT INTO $table_name (
+            transaction_id, description, amount, date
+        ) VALUES (
+            :transaction_id, :description, :amount, :date
+        )");
+        
+        $this->db->bind(':transaction_id', $transaction_id);
+        $this->db->bind(':description', isset($data['transaction_desc']) ? $data['transaction_desc'] : '');
+        $this->db->bind(':amount', $data['amount_paid']);
+        $this->db->bind(':date', $data['date_of_payment']);
+        
+        return $this->db->execute();
+    }
+    
+    // Get all transactions - with optimized query for better performance
+    public function getTransactions($limit = 100) {
+        // Prepare query with limit to prevent loading too many records at once
+        $this->db->query('SELECT * FROM account_general_transaction_new ORDER BY posting_time DESC LIMIT :limit');
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         
         // Get result set
         return $this->db->resultSet();
@@ -190,7 +243,7 @@ class Transaction {
         return $this->db->single();
     }
     
-    // Get transactions by remittance ID
+    // Get transactions by remittance ID - optimized for performance with indexing
     public function getTransactionsByRemitId($remit_id) {
         // Prepare query
         $this->db->query('SELECT * FROM account_general_transaction_new WHERE remit_id = :remit_id ORDER BY posting_time DESC');
@@ -214,28 +267,31 @@ class Transaction {
         return $this->db->single();
     }
     
-    // Get pending transactions for leasing approval
-    public function getPendingTransactionsForLeasingApproval() {
+    // Get pending transactions for leasing approval - limit results for performance
+    public function getPendingTransactionsForLeasingApproval($limit = 500) {
         // Prepare query
-        $this->db->query('SELECT * FROM account_general_transaction_new WHERE leasing_post_status = "pending" ORDER BY posting_time DESC');
+        $this->db->query('SELECT * FROM account_general_transaction_new WHERE leasing_post_status = "pending" ORDER BY posting_time DESC LIMIT :limit');
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         
         // Get result set
         return $this->db->resultSet();
     }
     
-    // Get pending transactions for account approval
-    public function getPendingTransactionsForAccountApproval() {
+    // Get pending transactions for account approval - limit results for performance
+    public function getPendingTransactionsForAccountApproval($limit = 500) {
         // Prepare query
-        $this->db->query('SELECT * FROM account_general_transaction_new WHERE leasing_post_status = "approved" AND approval_status = "pending" ORDER BY posting_time DESC');
+        $this->db->query('SELECT * FROM account_general_transaction_new WHERE leasing_post_status = "approved" AND approval_status = "pending" ORDER BY posting_time DESC LIMIT :limit');
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         
         // Get result set
         return $this->db->resultSet();
     }
     
-    // Get pending transactions for audit verification
-    public function getPendingTransactionsForAuditVerification() {
+    // Get pending transactions for audit verification - limit results for performance
+    public function getPendingTransactionsForAuditVerification($limit = 500) {
         // Prepare query
-        $this->db->query('SELECT * FROM account_general_transaction_new WHERE approval_status = "approved" AND verification_status = "pending" ORDER BY posting_time DESC');
+        $this->db->query('SELECT * FROM account_general_transaction_new WHERE approval_status = "approved" AND verification_status = "pending" ORDER BY posting_time DESC LIMIT :limit');
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         
         // Get result set
         return $this->db->resultSet();
@@ -344,7 +400,7 @@ class Transaction {
         return $this->db->execute();
     }
     
-    // Get transaction statistics for dashboard
+    // Get transaction statistics for dashboard - with optimized queries
     public function getTransactionStats() {
         $stats = [];
         

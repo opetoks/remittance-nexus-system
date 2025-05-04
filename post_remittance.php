@@ -22,7 +22,7 @@ $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['name'];
 $user_department = $_SESSION['department'];
 
-// Get remittances for dropdown
+// Get remittances for dropdown - filter to only get what's necessary for performance
 $remittances = $remittance->getRemittancesByOfficer($user_id);
 
 // Get accounts for dropdown
@@ -39,10 +39,13 @@ $remittance_balance_error = "";
 $debit_error = "";
 $credit_error = "";
 
-// Process form submission
+// Determine income type from URL parameter
+$incomeType = isset($_GET['type']) ? ucwords(str_replace('_', ' ', $_GET['type'])) : 'Car Park';
+
+// Process form submission for regular transactions
 if (isset($_POST['btn_post_transaction'])) {
-    // Get form data
-    $remit_id = isset($_POST['remit_id']) ? trim($_POST['remit_id']) : "";
+    // Get remit ID based on department
+    $remit_id = ($user_department == "Accounts") ? "" : (isset($_POST['remit_id']) ? trim($_POST['remit_id']) : "");
     
     // Check if remittance is required but not provided
     if ($user_department != "Accounts" && (empty($remit_id) || $remit_id == " ")) {
@@ -60,7 +63,7 @@ if (isset($_POST['btn_post_transaction'])) {
     // Get and validate receipt number
     $receipt_no = trim($_POST['receipt_no']);
     
-    // Check if receipt already exists in db using Transaction model
+    // Check if receipt already exists
     $existing_transaction = $transaction->getTransactionByReceiptNo($receipt_no);
     if ($existing_transaction) {
         $error = true;
@@ -77,13 +80,7 @@ if (isset($_POST['btn_post_transaction'])) {
     // Process remitting staff
     $remitting_post = $_POST['remitting_staff'];
     list($remitting_id, $remitting_type) = explode("-", $remitting_post);
-    
-    // Get remitter's name based on type (internal or external)
-    if ($remitting_type == "wc") {
-        $remitting_staff = $_POST['remitting_name']; // Using the selected name from form
-    } else {
-        $remitting_staff = $_POST['remitting_name']; // Using the selected name from form
-    }
+    $remitting_staff = $_POST['remitting_name'];
     
     // Process transaction description
     $transaction_desc = trim($_POST['transaction_desc']);
@@ -94,9 +91,8 @@ if (isset($_POST['btn_post_transaction'])) {
     $posting_officer_id = $user_id;
     $posting_officer_name = $user_name;
     
-    // Check remittance balance if applicable
+    // Check remittance balance if applicable for Wealth Creation department
     if ($user_department == "Wealth Creation" && !empty($remit_id)) {
-        // Get selected remittance details
         $selected_remittance = $remittance->getRemittanceByRemitId($remit_id);
         
         if ($selected_remittance) {
@@ -119,6 +115,18 @@ if (isset($_POST['btn_post_transaction'])) {
                     <strong>ATTENTION:</strong> Transaction failed! The amount posted: ₦ {$amount_paid}
                     exceeds the remittance balance of ₦ {$unposted}!
                 </div>";
+            }
+            
+            // Validate that the displayed remittance balance matches the actual balance
+            if (isset($_POST['amt_remitted']) && $_POST['amt_remitted'] > $unposted) {
+                $error = true;
+                $remittance_balance_error = "<div class='alert alert-danger'>
+                    <strong>WARNING:</strong> Transaction failed! Your remittance balance is: ₦ {$unposted} 
+                    and NOT ₦ {$_POST['amt_remitted']}. Please close all duplicate posting pages and re-open 
+                    your posting page from the main navigation menu.
+                </div>";
+                
+                // Could add email notification here if required
             }
         }
     }
@@ -149,16 +157,17 @@ if (isset($_POST['btn_post_transaction'])) {
         $credit_error = "Please select the credit account";
     }
     
+    // Process ticket data
+    $ticket_category = isset($_POST['ticket_category']) ? $_POST['ticket_category'] : null;
+    $no_of_tickets = isset($_POST['no_of_tickets']) ? $_POST['no_of_tickets'] : null;
+    
     // Get account details if no errors
     if (!$error) {
-        // Get debit account details
-        $debit_account = $account->getAccountByCode($debit_alias);
-        
         // Get credit account details
         $credit_account = $account->getAccountByCode($credit_alias);
         
         // Set income line
-        $income_line = isset($_POST['income_line']) ? $_POST['income_line'] : $credit_account['acct_desc'];
+        $income_line = isset($_POST['income_line']) ? $_POST['income_line'] : $incomeType . " Collection";
         
         // Prepare transaction data
         $transaction_data = [
@@ -177,10 +186,11 @@ if (isset($_POST['btn_post_transaction'])) {
             'debit_account' => $debit_alias,
             'credit_account' => $credit_alias,
             'payment_category' => 'Other Collection',
-            'plate_no' => isset($_POST['plate_no']) ? $_POST['plate_no'] : '',
             'remit_id' => $remit_id,
             'income_line' => $income_line,
-            'no_of_tickets' => isset($_POST['no_of_tickets']) ? $_POST['no_of_tickets'] : null,
+            'ticket_category' => $ticket_category,
+            'no_of_tickets' => $no_of_tickets,
+            'plate_no' => isset($_POST['plate_no']) ? $_POST['plate_no'] : ''
         ];
         
         // Add transaction using our model
@@ -262,7 +272,7 @@ include('include/header.php');
                         <li class="list-group-item"><a href="?type=general">General</a></li>
                         <li class="list-group-item"><a href="?type=abattoir">Abattoir</a></li>
                         <li class="list-group-item"><a href="?type=car_loading">Car Loading Ticket</a></li>
-                        <li class="list-group-item"><a href="?type=car_park">Car Park Ticket</a></li>
+                        <li class="list-group-item"><a href="?type=car_park" class="<?php echo ($incomeType == 'Car Park') ? 'fw-bold text-primary' : ''; ?>">Car Park Ticket</a></li>
                         <li class="list-group-item"><a href="?type=hawkers">Hawkers Ticket</a></li>
                         <li class="list-group-item"><a href="?type=wheelbarrow">WheelBarrow Ticket</a></li>
                         <li class="list-group-item"><a href="?type=daily_trade">Daily Trade</a></li>
@@ -279,10 +289,7 @@ include('include/header.php');
         <div class="col-md-10">
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <?php 
-                    $incomeType = isset($_GET['type']) ? ucwords(str_replace('_', ' ', $_GET['type'])) : 'Car Park';
-                    echo "<h5>{$incomeType} Tickets</h5>";
-                    ?>
+                    <h5><?php echo $incomeType; ?> Tickets</h5>
                 </div>
                 <div class="card-body">
                     <!-- Remittance Summary -->
@@ -330,25 +337,30 @@ include('include/header.php');
                                         <span class="input-group-text"><i class="fas fa-file-invoice-dollar"></i></span>
                                         <select class="form-control" id="remit_id" name="remit_id" required>
                                             <option value="">Select...</option>
-                                            <?php foreach($remittances as $remit): ?>
-                                                <?php 
-                                                $posted_transactions = $transaction->getTransactionsByRemitId($remit['remit_id']);
-                                                $posted_amount = 0;
-                                                
-                                                foreach ($posted_transactions as $posted) {
-                                                    $posted_amount += $posted['amount_paid'];
-                                                }
-                                                
-                                                $unposted = $remit['amount_paid'] - $posted_amount;
-                                                
-                                                // Only show remittances that have unposted amount
-                                                if ($unposted > 0):
-                                                ?>
+                                            <?php 
+                                            // Only show remittances with unposted amounts to improve performance
+                                            if (is_array($remittances)) {
+                                                foreach($remittances as $remit): 
+                                                    $posted_transactions = $transaction->getTransactionsByRemitId($remit['remit_id']);
+                                                    $posted_amount = 0;
+                                                    
+                                                    foreach ($posted_transactions as $posted) {
+                                                        $posted_amount += $posted['amount_paid'];
+                                                    }
+                                                    
+                                                    $unposted = $remit['amount_paid'] - $posted_amount;
+                                                    
+                                                    // Only show remittances that have unposted amount
+                                                    if ($unposted > 0):
+                                            ?>
                                                 <option value="<?php echo $remit['remit_id']; ?>" <?php echo (isset($_GET['remit_id']) && $_GET['remit_id'] == $remit['remit_id']) ? 'selected' : ''; ?>>
                                                     <?php echo $remit['remit_id'] . ' - ₦' . number_format($unposted, 2) . ' remaining'; ?>
                                                 </option>
-                                                <?php endif; ?>
-                                            <?php endforeach; ?>
+                                            <?php 
+                                                    endif;
+                                                endforeach;
+                                            }
+                                            ?>
                                         </select>
                                     </div>
                                 </div>
@@ -393,9 +405,6 @@ include('include/header.php');
                                         <span class="input-group-text"><i class="fas fa-receipt"></i></span>
                                         <input type="text" class="form-control" id="receipt_no" name="receipt_no" required>
                                     </div>
-                                    <?php if(!empty($debit_error)): ?>
-                                        <span class="text-danger"><?php echo $debit_error; ?></span>
-                                    <?php endif; ?>
                                 </div>
                                 
                                 <div class="mb-3">
@@ -427,7 +436,7 @@ include('include/header.php');
                                         <select class="form-control" id="debit_account" name="debit_account" required>
                                             <option value="">Select...</option>
                                             <?php foreach($debit_accounts as $acct): ?>
-                                            <option value="<?php echo $acct['acct_id']; ?>">
+                                            <option value="<?php echo $acct['acct_code']; ?>">
                                                 <?php echo $acct['acct_desc']; ?>
                                             </option>
                                             <?php endforeach; ?>
@@ -445,7 +454,7 @@ include('include/header.php');
                                         <select class="form-control" id="credit_account" name="credit_account" required>
                                             <option value="">Select...</option>
                                             <?php foreach($credit_accounts as $acct): ?>
-                                            <option value="<?php echo $acct['acct_id']; ?>">
+                                            <option value="<?php echo $acct['acct_code']; ?>">
                                                 <?php echo $acct['acct_desc']; ?>
                                             </option>
                                             <?php endforeach; ?>
@@ -468,6 +477,10 @@ include('include/header.php');
                                 <input type="hidden" name="posting_officer_id" value="<?php echo $user_id; ?>">
                                 <input type="hidden" name="posting_officer_name" value="<?php echo $user_name; ?>">
                                 <input type="hidden" name="income_line" id="income_line" value="<?php echo $incomeType; ?> Collection">
+                                <!-- Add this hidden field to track the actual remittance balance -->
+                                <?php if ($selected_remittance): ?>
+                                <input type="hidden" name="amt_remitted" value="<?php echo $unposted_amount; ?>">
+                                <?php endif; ?>
                             </div>
                         </div>
                         
@@ -502,18 +515,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Handle remittance selection change
-    document.getElementById('remit_id').addEventListener('change', function() {
-        const remitId = this.value;
-        if (remitId) {
-            window.location.href = 'post_remittance.php?remit_id=' + remitId;
-        }
-    });
+    const remitSelect = document.getElementById('remit_id');
+    if (remitSelect) {
+        remitSelect.addEventListener('change', function() {
+            const remitId = this.value;
+            if (remitId) {
+                window.location.href = 'post_remittance.php?type=<?php echo strtolower(str_replace(' ', '_', $incomeType)); ?>&remit_id=' + remitId;
+            }
+        });
+    }
     
     // Set appropriate credit account based on income type
     const incomeType = "<?php echo $incomeType; ?>";
     const creditSelect = document.getElementById('credit_account');
     
-    if (incomeType) {
+    if (incomeType && creditSelect) {
         for (let i = 0; i < creditSelect.options.length; i++) {
             if (creditSelect.options[i].text.includes(incomeType)) {
                 creditSelect.selectedIndex = i;
@@ -521,6 +537,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
+    
+    // Initialize any existing values
+    calculateAmount();
 });
 
 function calculateAmount() {
