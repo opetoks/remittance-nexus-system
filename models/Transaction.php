@@ -100,6 +100,10 @@ class Transaction {
                 if ($data['income_line'] == 'Car Park Collection' || strpos($data['income_line'], 'Car Park') !== false) {
                     $this->processParkingTickets($transaction_id, $table_name, $data);
                 } 
+                // Process scroll board rentals
+                else if ($data['income_line'] == 'Scroll Board Collection' || strpos($data['income_line'], 'Scroll Board') !== false) {
+                    $this->processScrollBoardIncome($transaction_id, $table_name, $data);
+                }
                 // Process other income types
                 else {
                     $this->processGeneralIncome($transaction_id, $table_name, $data);
@@ -134,6 +138,31 @@ class Transaction {
         $this->db->bind(':date', $data['date_of_payment']);
         $this->db->bind(':ticket_category', isset($data['ticket_category']) ? $data['ticket_category'] : null);
         $this->db->bind(':no_of_tickets', isset($data['no_of_tickets']) ? $data['no_of_tickets'] : null);
+        
+        // Execute the specific income table insert
+        return $this->db->execute();
+    }
+    
+    // Process scroll board income specifically
+    private function processScrollBoardIncome($transaction_id, $table_name, $data) {
+        // Make sure this function works efficiently for scroll board income
+        $this->db->query("INSERT INTO $table_name (
+            transaction_id, customer_name, description, amount, date, 
+            start_date, end_date, location, scroll_id
+        ) VALUES (
+            :transaction_id, :customer_name, :description, :amount, :date,
+            :start_date, :end_date, :location, :scroll_id
+        )");
+        
+        $this->db->bind(':transaction_id', $transaction_id);
+        $this->db->bind(':customer_name', isset($data['customer_name']) ? $data['customer_name'] : null);
+        $this->db->bind(':description', isset($data['transaction_desc']) ? $data['transaction_desc'] : 'Scroll Board Rental');
+        $this->db->bind(':amount', $data['amount_paid']);
+        $this->db->bind(':date', $data['date_of_payment']);
+        $this->db->bind(':start_date', isset($data['start_date']) ? $data['start_date'] : null);
+        $this->db->bind(':end_date', isset($data['end_date']) ? $data['end_date'] : null);
+        $this->db->bind(':location', isset($data['location']) ? $data['location'] : null);
+        $this->db->bind(':scroll_id', isset($data['scroll_id']) ? $data['scroll_id'] : null);
         
         // Execute the specific income table insert
         return $this->db->execute();
@@ -265,6 +294,51 @@ class Transaction {
         
         // Get single record
         return $this->db->single();
+    }
+    
+    // Get scroll board transactions for dashboard
+    public function getScrollBoardTransactions($limit = 100, $date_from = null, $date_to = null) {
+        $whereClause = "WHERE income_line = 'Scroll Board Collection'";
+        
+        if ($date_from && $date_to) {
+            $whereClause .= " AND date_of_payment BETWEEN :date_from AND :date_to";
+        }
+        
+        $query = "SELECT t.*, 
+                 DATE_FORMAT(t.start_date, '%d-%m-%Y') as formatted_start_date,
+                 DATE_FORMAT(t.end_date, '%d-%m-%Y') as formatted_end_date
+                 FROM account_general_transaction_new t
+                 $whereClause
+                 ORDER BY t.posting_time DESC
+                 LIMIT :limit";
+        
+        $this->db->query($query);
+        
+        if ($date_from && $date_to) {
+            $this->db->bind(':date_from', $date_from);
+            $this->db->bind(':date_to', $date_to);
+        }
+        
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        
+        return $this->db->resultSet();
+    }
+    
+    // Get scroll board customer payments summary
+    public function getScrollBoardCustomerSummary() {
+        $query = "SELECT 
+                customer_name, 
+                COUNT(*) as total_payments,
+                SUM(amount_paid) as total_amount,
+                MAX(end_date) as latest_end_date
+                FROM account_general_transaction_new
+                WHERE income_line = 'Scroll Board Collection'
+                AND customer_name IS NOT NULL
+                GROUP BY customer_name
+                ORDER BY latest_end_date DESC";
+                
+        $this->db->query($query);
+        return $this->db->resultSet();
     }
     
     // Get pending transactions for leasing approval - limit results for performance

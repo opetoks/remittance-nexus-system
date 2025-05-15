@@ -39,6 +39,9 @@ $remittance_balance_error = "";
 $debit_error = "";
 $credit_error = "";
 
+// If customer is provided in URL for preselection
+$preselected_customer = isset($_GET['customer']) ? $_GET['customer'] : '';
+
 // Determine income type from URL parameter
 $incomeType = isset($_GET['type']) ? ucwords(str_replace('_', ' ', $_GET['type'])) : 'Car Park';
 
@@ -90,6 +93,13 @@ if (isset($_POST['btn_post_transaction'])) {
     // Set posting officer details
     $posting_officer_id = $user_id;
     $posting_officer_name = $user_name;
+    
+    // Process customer info for Scroll Board
+    $customer_name = isset($_POST['customer_name']) ? trim($_POST['customer_name']) : '';
+    $start_date = isset($_POST['start_date']) ? date('Y-m-d', strtotime($_POST['start_date'])) : '';
+    $end_date = isset($_POST['end_date']) ? date('Y-m-d', strtotime($_POST['end_date'])) : '';
+    $location = isset($_POST['location']) ? trim($_POST['location']) : '';
+    $scroll_id = isset($_POST['scroll_id']) ? trim($_POST['scroll_id']) : '';
     
     // Check remittance balance if applicable for Wealth Creation department
     if ($user_department == "Wealth Creation" && !empty($remit_id)) {
@@ -187,11 +197,22 @@ if (isset($_POST['btn_post_transaction'])) {
             'credit_account' => $credit_alias,
             'payment_category' => 'Other Collection',
             'remit_id' => $remit_id,
-            'income_line' => $income_line,
-            'ticket_category' => $ticket_category,
-            'no_of_tickets' => $no_of_tickets,
-            'plate_no' => isset($_POST['plate_no']) ? $_POST['plate_no'] : ''
+            'income_line' => $income_line
         ];
+        
+        // Add customer data for Scroll Board
+        if ($incomeType == "Scroll Board") {
+            $transaction_data['customer_name'] = $customer_name;
+            $transaction_data['start_date'] = $start_date;
+            $transaction_data['end_date'] = $end_date;
+            $transaction_data['location'] = $location;
+            $transaction_data['scroll_id'] = $scroll_id;
+        } else {
+            // Add car park specific data
+            $transaction_data['ticket_category'] = $ticket_category;
+            $transaction_data['no_of_tickets'] = $no_of_tickets;
+            $transaction_data['plate_no'] = isset($_POST['plate_no']) ? $_POST['plate_no'] : '';
+        }
         
         // Add transaction using our model
         $result = $transaction->addTransaction($transaction_data);
@@ -277,7 +298,7 @@ include('include/header.php');
                         <li class="list-group-item"><a href="?type=wheelbarrow">WheelBarrow Ticket</a></li>
                         <li class="list-group-item"><a href="?type=daily_trade">Daily Trade</a></li>
                         <li class="list-group-item"><a href="?type=toilet">Toilet Collection</a></li>
-                        <li class="list-group-item"><a href="?type=scroll_board">Scroll Board</a></li>
+                        <li class="list-group-item"><a href="?type=scroll_board" class="<?php echo ($incomeType == 'Scroll Board') ? 'fw-bold text-primary' : ''; ?>">Scroll Board</a></li>
                         <li class="list-group-item"><a href="?type=other_pos">Other POS Ticket</a></li>
                         <li class="list-group-item"><a href="?type=arrears">Daily Trade Arrears</a></li>
                     </ul>
@@ -289,7 +310,7 @@ include('include/header.php');
         <div class="col-md-10">
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <h5><?php echo $incomeType; ?> Tickets</h5>
+                    <h5><?php echo $incomeType; ?> <?php echo ($incomeType == 'Scroll Board') ? 'Collection' : 'Tickets'; ?></h5>
                 </div>
                 <div class="card-body">
                     <!-- Remittance Summary -->
@@ -311,6 +332,9 @@ include('include/header.php');
                                     <div>
                                         <?php if ($user_department == "Accounts"): ?>
                                             <a href="post_past_payments.php" class="btn btn-sm btn-danger">Post Past Payments</a>
+                                        <?php endif; ?>
+                                        <?php if ($incomeType == "Scroll Board"): ?>
+                                            <a href="scroll_board_dashboard.php" class="btn btn-sm btn-success">Scroll Board Dashboard</a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -376,6 +400,51 @@ include('include/header.php');
                                     </div>
                                 </div>
                                 
+                                <?php if ($incomeType == "Scroll Board"): ?>
+                                <!-- Scroll Board specific fields -->
+                                <div class="mb-3">
+                                    <label for="customer_name" class="form-label">Customer Name:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        <input type="text" class="form-control" id="customer_name" name="customer_name" 
+                                            value="<?php echo htmlspecialchars($preselected_customer); ?>" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="scroll_id" class="form-label">Scroll Board ID:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-id-badge"></i></span>
+                                        <input type="text" class="form-control" id="scroll_id" name="scroll_id">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="location" class="form-label">Location:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                        <input type="text" class="form-control" id="location" name="location">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Period Start Date:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-plus"></i></span>
+                                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">Period End Date:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-minus"></i></span>
+                                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                    </div>
+                                </div>
+                                
+                                <?php else: ?>
+                                <!-- Car park ticket specific fields -->
                                 <div class="mb-3">
                                     <label for="ticket_category" class="form-label">Ticket Category:</label>
                                     <div class="input-group">
@@ -396,6 +465,7 @@ include('include/header.php');
                                         <input type="number" class="form-control" id="no_of_tickets" name="no_of_tickets" min="1" onchange="calculateAmount()">
                                     </div>
                                 </div>
+                                <?php endif; ?>
                             </div>
                             
                             <div class="col-md-6">
@@ -504,8 +574,10 @@ include('include/header.php');
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Auto calculate amount based on ticket category and number of tickets
-    document.getElementById('no_of_tickets').addEventListener('change', calculateAmount);
-    document.getElementById('ticket_category').addEventListener('change', calculateAmount);
+    if (document.getElementById('no_of_tickets')) {
+        document.getElementById('no_of_tickets').addEventListener('change', calculateAmount);
+        document.getElementById('ticket_category').addEventListener('change', calculateAmount);
+    }
     
     // Update remitter name when selection changes
     document.getElementById('remitting_staff').addEventListener('change', function() {
@@ -538,8 +610,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Calculate rental period
+    if (document.getElementById('start_date')) {
+        document.getElementById('start_date').addEventListener('change', calculateEndDate);
+    }
+    
     // Initialize any existing values
-    calculateAmount();
+    if (document.getElementById('no_of_tickets')) {
+        calculateAmount();
+    }
 });
 
 function calculateAmount() {
@@ -549,6 +628,22 @@ function calculateAmount() {
     if (ticketValue && ticketCount) {
         const totalAmount = ticketValue * ticketCount;
         document.getElementById('amount_paid').value = totalAmount.toFixed(2);
+    }
+}
+
+function calculateEndDate() {
+    const startDate = document.getElementById('start_date').value;
+    if (startDate) {
+        // Default to 1 month rental period
+        const endDateObj = new Date(startDate);
+        endDateObj.setMonth(endDateObj.getMonth() + 1);
+        endDateObj.setDate(endDateObj.getDate() - 1); // One day less for exact month
+        
+        const year = endDateObj.getFullYear();
+        const month = String(endDateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(endDateObj.getDate()).padStart(2, '0');
+        
+        document.getElementById('end_date').value = `${year}-${month}-${day}`;
     }
 }
 </script>
