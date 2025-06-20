@@ -1,42 +1,64 @@
 
-import React, { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "./components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
-
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "./pages/Login";
 import Index from "./pages/Index";
 import IncomeSummary from "./pages/IncomeSummary";
 import PowerConsumption from "./pages/PowerConsumption";
-import NotFound from "./pages/NotFound";
 import MPR from "./pages/MPR";
+import NotFound from "./pages/NotFound";
+import "./App.css";
 
-const queryClient = new QueryClient();
-
-const App = () => {
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
-
-  useEffect(() => {
-    // You can add logic here to check user preferences or system settings
-    // to determine the initial theme.
-    // For example, check local storage or use a media query.
-    // For now, let's default to light theme.
-  }, []);
-
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/income-summary" element={<IncomeSummary />} />
-          <Route path="/power-consumption" element={<PowerConsumption />} />
-          <Route path="/mpr" element={<MPR />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/login" element={<Login />} />
+          
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/income-summary" 
+            element={
+              <ProtectedRoute requiredRoles={['admin', 'it_officer', 'accounting_officer', 'auditor']}>
+                <IncomeSummary />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/power-consumption" 
+            element={
+              <ProtectedRoute requiredRoles={['admin', 'it_officer', 'accounting_officer']}>
+                <PowerConsumption />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/mpr" 
+            element={
+              <ProtectedRoute requiredRoles={['admin', 'it_officer', 'accounting_officer', 'auditor']}>
+                <MPR />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
-        <Toaster />
-      </ThemeProvider>
-    </QueryClientProvider>
+      </Router>
+    </AuthProvider>
   );
-};
+}
 
 export default App;
