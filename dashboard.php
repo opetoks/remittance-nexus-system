@@ -24,7 +24,28 @@ $departmentFeatures = [
             'Chart of Accounts',
             'Full Transaction Access',
             'Approve All Posts',
-            'System Backup'
+            'System Backup',
+            // Accounts features
+            'Financial Reports',
+            'Transaction Verification',
+            'Income Summary',
+            'MPR Reports',
+            // Wealth Creation features
+            'Post Collections',
+            'Customer Management',
+            'Collection Reports',
+            'Income Tracking',
+            'Cash Remittance',
+            // Audit features
+            'Verify Transactions',
+            'Audit Reports',
+            'Transaction History',
+            'Compliance Monitoring',
+            // Leasing features
+            'Shop Rent Management',
+            'Scroll Board Operations',
+            'Lease Reports',
+            'Property Management'
         ]
     ],
     'Accounts' => [
@@ -166,6 +187,102 @@ $currentDeptFeatures = $departmentFeatures[$department] ?? ['admin' => false, 'f
                         <div class="flex items-center">
                             <i class="fas fa-cog text-indigo-600 mr-3"></i>
                             <span class="font-medium text-gray-900">System Settings</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Accounts Functions for IT -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-calculator text-green-600 text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900">Financial Management</h2>
+                </div>
+                <div class="space-y-3">
+                    <a href="approve_posts.php" class="card-hover block bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Approve Posts</span>
+                        </div>
+                    </a>
+                    <a href="income_summary.html" class="card-hover block bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-pie text-blue-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Income Summary</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Wealth Creation Functions for IT -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-yellow-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-coins text-yellow-600 text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900">Collection Management</h2>
+                </div>
+                <div class="space-y-3">
+                    <a href="post_collection.php" class="card-hover block bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border border-yellow-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-receipt text-yellow-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Post Collections</span>
+                        </div>
+                    </a>
+                    <a href="remittance.php" class="card-hover block bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border border-orange-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-money-bill-wave text-orange-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Cash Remittance</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Audit Functions for IT -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-red-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-shield-alt text-red-600 text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900">Audit & Verification</h2>
+                </div>
+                <div class="space-y-3">
+                    <a href="verify_transactions.php" class="card-hover block bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-lg border border-red-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-clipboard-check text-red-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Verify Transactions</span>
+                        </div>
+                    </a>
+                    <a href="transactions.php" class="card-hover block bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg border border-pink-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-list text-pink-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Transaction History</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Leasing Functions for IT -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-teal-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-building text-teal-600 text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900">Property & Leasing</h2>
+                </div>
+                <div class="space-y-3">
+                    <a href="post_remittance.php?type=shop" class="card-hover block bg-gradient-to-r from-teal-50 to-cyan-50 p-4 rounded-lg border border-teal-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-store text-teal-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Shop Rent Management</span>
+                        </div>
+                    </a>
+                    <a href="scroll_board_dashboard.php" class="card-hover block bg-gradient-to-r from-cyan-50 to-blue-50 p-4 rounded-lg border border-cyan-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-chalkboard text-cyan-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Scroll Board Operations</span>
                         </div>
                     </a>
                 </div>
