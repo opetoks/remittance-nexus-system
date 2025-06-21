@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authService, User, Staff } from "../services/authService";
 
@@ -13,16 +12,7 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  user: null,
-  staff: null,
-  userRole: null,
-  login: async () => false,
-  logout: () => {},
-  hasPermission: () => false,
-  isLoading: true,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -50,22 +40,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
       const response = await authService.login({ email, password });
       
-      if (response.success && response.user && response.staff) {
+      if (response.success && response.user && response.staff && response.role) {
         setUser(response.user);
         setStaff(response.staff);
-        setUserRole(response.role || null);
+        setUserRole(response.role);
         setIsAuthenticated(true);
+        
+        // Redirect to dashboard instead of root
+        window.location.href = '/dashboard';
+        
         return true;
       } else {
-        console.error("Login failed:", response.message);
         return false;
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 

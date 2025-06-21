@@ -1,13 +1,13 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, ChartLine } from 'lucide-react';
+import { Eye, EyeOff, ChartLine, ArrowLeft } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -55,8 +55,18 @@ export default function Login() {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-[2px]"></div>
       
       {/* Content */}
-      <div className="relative z-10">
-        <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm border-white/20">
+      <div className="relative z-10 w-full max-w-md">
+        {/* Back to Home Link */}
+        <div className="mb-6">
+          <Button variant="ghost" asChild className="text-gray-600 hover:text-gray-900">
+            <Link to="/">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Link>
+          </Button>
+        </div>
+
+        <Card className="w-full bg-white/95 backdrop-blur-sm border-white/20">
           <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-2 mb-4">
               <ChartLine className="h-8 w-8 text-blue-600" />
