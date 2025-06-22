@@ -1,3 +1,4 @@
+
 <?php
 require_once 'config/config.php';
 require_once 'config/Database.php';
@@ -27,6 +28,20 @@ $userEmail = $_SESSION['user_email'] ?? '';
 
 // Get all remittances for this officer
 $myRemittances = $remittanceModel->getRemittancesByOfficer($_SESSION['user_id']);
+
+// Filter remittances to only show today's unposted ones
+$todayRemittances = [];
+$today = date('Y-m-d');
+
+foreach($myRemittances as $remit) {
+    $remitDate = date('Y-m-d', strtotime($remit['date']));
+    if ($remitDate === $today && !$remittanceModel->isRemittanceFullyPosted($remit['remit_id'])) {
+        $todayRemittances[] = $remit;
+    }
+}
+
+// Check if officer has no unposted remittances for today
+$hasUnpostedToday = count($todayRemittances) > 0;
 
 // Get income line accounts
 $incomeLines = $accountModel->getIncomeLineAccounts();
@@ -209,6 +224,28 @@ $is_after_cutoff = $current_time > $cutoff_time;
                 Post and manage collections for <?= htmlspecialchars($userDepartment) ?> Department
             </p>
         </div>
+
+        <!-- No Unposted Remittances Notice -->
+        <?php if(!$hasUnpostedToday): ?>
+            <div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-6 mb-6 rounded-lg shadow-md">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-2xl text-orange-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-xl font-bold text-orange-800 mb-2">
+                            NO UNPOSTED REMITTANCES FOR TODAY
+                        </h3>
+                        <p class="text-lg font-semibold">
+                            You have no pending remittances to post for today (<?= date('F j, Y') ?>).
+                        </p>
+                        <p class="text-sm mt-2">
+                            If you need to create a new remittance, please use the "New Remittance" button below.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Alert Messages -->
         <?php if(!empty($success_msg)): ?>
