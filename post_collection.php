@@ -19,23 +19,12 @@ $remittanceModel = new Remittance();
 $transactionModel = new Transaction();
 $accountModel = new Account();
 
-// Get Current User department
-$userDepartment = $user->getDepartmentByUserIdstring($userId);
-
-// Get remit_id from URL if provided
-$remit_id = isset($_GET['remit_id']) ? sanitize($_GET['remit_id']) : '';
-$remittance = null;
-
-if (!empty($remit_id)) {
-    $remittance = $remittanceModel->getRemittanceByRemitId($remit_id);
-    
-    // If remittance not found or not belonging to the current user, redirect
-    if (!$remittance || $remittance['remitting_officer_id'] != $_SESSION['user_id']) {
-        redirect('index.php');
-    }
-}
 // Get current user information
 $currentUser = $user->getUserById($userId);
+$userDepartment = $_SESSION['department'] ?? 'Wealth Creation';
+$userName = $_SESSION['user_name'] ?? 'User';
+$userEmail = $_SESSION['user_email'] ?? '';
+
 // Get all remittances for this officer
 $myRemittances = $remittanceModel->getRemittancesByOfficer($_SESSION['user_id']);
 
@@ -66,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $plate_no = sanitize(isset($_POST['plate_no']) ? $_POST['plate_no'] : '');
     $transaction_desc = sanitize(isset($_POST['transaction_desc']) ? $_POST['transaction_desc'] : '');
 
-    
     // Validation
     $errors = [];
     
@@ -155,23 +143,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Get transactions for the current remittance (if selected)
-$transactions = [];
-if ($remittance) {
-    $transactions = $transactionModel->getTransactionsByRemitId($remittance['remit_id']);
-    
-    // Calculate remaining amount and receipts
-    $totalPosted = count($transactions);
-    $pendingReceipts = $remittance['no_of_receipts'] - $totalPosted;
-    
-    $postedAmount = 0;
-    foreach ($transactions as $transaction) {
-        $postedAmount += $transaction['amount_paid'];
-    }
-    
-    $pendingAmount = $remittance['amount_paid'] - $postedAmount;
-}
-
 // Get current time in Lagos timezone
 $current_time = new DateTime('now', new DateTimeZone('Africa/Lagos'));
 $cutoff_time = new DateTime('18:30', new DateTimeZone('Africa/Lagos'));
@@ -183,523 +154,397 @@ $is_after_cutoff = $current_time > $cutoff_time;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post Collections - Income ERP System</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <title>Collection Posting - Income ERP System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .dept-badge {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <i class="fas fa-chart-line"></i> Income ERP
-                </div>
-            </div>
-            
-            <div class="sidebar-menu">
-                <div class="sidebar-menu-title">MAIN MENU</div>
-                
-                <a href="index.php" class="sidebar-menu-item">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                
-                <?php if(hasDepartment('IT/E-Business') || hasDepartment('Accounts')): ?>
-                <a href="remittance.php" class="sidebar-menu-item">
-                    <i class="fas fa-money-bill-wave"></i> Remittances
-                </a>
-                <?php endif; ?>
-                
-                <?php if(hasDepartment('leasing')): ?>
-                <a href="post_collection.php" class="sidebar-menu-item active">
-                    <i class="fas fa-receipt"></i> Post Collections
-                </a>
-                <?php endif; ?>
-                
-                <?php if(hasDepartment('Accounts')): ?>
-                <a href="approve_posts.php" class="sidebar-menu-item">
-                    <i class="fas fa-check-circle"></i> Approve Posts
-                </a>
-                <?php endif; ?>
-                
-                <?php if(hasDepartment('Audit/Inspections')): ?>
-                <a href="verify_transactions.php" class="sidebar-menu-item">
-                    <i class="fas fa-clipboard-check"></i> Verify Transactions
-                </a>
-                <?php endif; ?>
-                
-                <a href="transactions.php" class="sidebar-menu-item">
-                    <i class="fas fa-exchange-alt"></i> Transactions
-                </a>
-                
-                <?php if(hasDepartment('IT/E-Business')): ?>
-                <div class="sidebar-menu-title">ADMINISTRATION</div>
-                
-                <a href="accounts.php" class="sidebar-menu-item">
-                    <i class="fas fa-chart-pie"></i> Chart of Accounts
-                </a>
-                
-                <a href="users.php" class="sidebar-menu-item">
-                    <i class="fas fa-users"></i> User Management
-                </a>
-                
-                <a href="reports.php" class="sidebar-menu-item">
-                    <i class="fas fa-file-alt"></i> Reports
-                </a>
-                
-                <a href="settings.php" class="sidebar-menu-item">
-                    <i class="fas fa-cog"></i> Settings
-                </a>
-                <?php endif; ?>
-            </div>
-        </aside>
-        
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Header -->
-            <header class="header">
-                <div class="header-left">
-                    <button class="toggle-sidebar">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h4 class="page-title">Post Collections</h4>
-                </div>
-                
-                <div class="header-right">
-                    <div class="user-dropdown">
-                        <button class="user-dropdown-toggle">
-                            <div class="avatar">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <span class="name"><?php echo $currentUser['full_name']; ?></span>
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        
-                        <div class="user-dropdown-menu">
-                            <a href="profile.php" class="user-dropdown-item">
-                                <i class="fas fa-user-circle"></i> Profile
-                            </a>
-                            <a href="change_password.php" class="user-dropdown-item">
-                                <i class="fas fa-key"></i> Change Password
-                            </a>
-                            <div class="user-dropdown-divider"></div>
-                            <a href="logout.php" class="user-dropdown-item">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </div>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="text-white text-xl font-bold flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Income ERP System
                     </div>
                 </div>
-            </header>
-            
-            <!-- Content Body -->
-            <div class="content-body">
-                <?php if(!empty($success_msg)): ?>
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> <?php echo $success_msg; ?>
+                <div class="flex items-center space-x-4">
+                    <div class="dept-badge text-white px-3 py-1 rounded-full text-sm font-medium">
+                        <?= htmlspecialchars($userDepartment) ?>
                     </div>
-                <?php endif; ?>
-                
-                <?php if(!empty($error_msg)): ?>
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i> <?php echo $error_msg; ?>
+                    <div class="text-white text-sm">
+                        Welcome, <?= htmlspecialchars($userName) ?>
                     </div>
-                <?php endif; ?>
-                
-                <?php if($is_after_cutoff): ?>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-clock"></i> Note: It's past 6:30 PM. New transactions must be recorded as unposted.
-                        <a href="unposted_transactions.php" class="btn btn-warning btn-sm ml-3">
-                            <i class="fas fa-receipt"></i> Record Unposted Transaction
-                        </a>
-                    </div>
-                <?php endif; ?>
-                
-                <!-- Select Remittance Section -->
-                <?php if(empty($remittance)): ?>
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Select Remittance</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover datatable">
-                                    <thead>
-                                        <tr>
-                                            <th>Remit ID</th>
-                                            <th>Date</th>
-                                            <th>Amount</th>
-                                            <th>No. of Receipts</th>
-                                            <th>Category</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if(!empty($myRemittances)): ?>
-                                            <?php foreach($myRemittances as $remit): ?>
-                                                <?php 
-                                                    $isPosted = $remittanceModel->isRemittanceFullyPosted($remit['remit_id']);
-                                                ?>
-                                                <tr>
-                                                    <td><?php echo $remit['remit_id']; ?></td>
-                                                    <td><?php echo formatDate($remit['date']); ?></td>
-                                                    <td><?php echo formatCurrency($remit['amount_paid']); ?></td>
-                                                    <td><?php echo $remit['no_of_receipts']; ?></td>
-                                                    <td><?php echo $remit['category']; ?></td>
-                                                    <td>
-                                                        <?php if($isPosted): ?>
-                                                            <span class="badge badge-success">Fully Posted</span>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-warning">Pending Posts</span>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                    <td>
-                                                        <?php if(!$isPosted): ?>
-                                                            <a href="post_collection.php?remit_id=<?php echo $remit['remit_id']; ?>" class="btn btn-sm btn-primary">
-                                                                <i class="fas fa-receipt"></i> Post
-                                                            </a>
-                                                        <?php else: ?>
-                                                            <a href="post_collection.php?remit_id=<?php echo $remit['remit_id']; ?>" class="btn btn-sm btn-info">
-                                                                <i class="fas fa-eye"></i> View
-                                                            </a>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td colspan="7" class="text-center">No remittances found</td>
-                                            </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <!-- Remittance Details -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Remittance Details</h5>
-                            <a href="post_collection.php" class="btn btn-sm btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to List
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <table class="table table-bordered">
-                                        <tr>
-                                            <th>Remittance ID:</th>
-                                            <td><?php echo $remittance['remit_id']; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Date:</th>
-                                            <td><?php echo formatDate($remittance['date']); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Amount:</th>
-                                            <td><?php echo formatCurrency($remittance['amount_paid']); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Number of Receipts:</th>
-                                            <td><?php echo $remittance['no_of_receipts']; ?></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <div class="col-md-6">
-                                    <table class="table table-bordered">
-                                        <tr>
-                                            <th>Remaining Amount:</th>
-                                            <td><?php echo formatCurrency($pendingAmount); ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Remaining Receipts:</th>
-                                            <td><?php echo $pendingReceipts; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Category:</th>
-                                            <td><?php echo $remittance['category']; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Status:</th>
-                                            <td>
-                                                <?php if($pendingReceipts <= 0): ?>
-                                                    <span class="badge badge-success">Fully Posted</span>
-                                                <?php else: ?>
-                                                    <span class="badge badge-warning">Pending Posts</span>
-                                                <?php endif; ?>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Post Transaction Form -->
-                    <?php if($pendingReceipts > 0 && !$is_after_cutoff): ?>
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Post Transaction</h5>
-                            </div>
-                            <div class="card-body">
-                                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST" class="needs-validation">
-                                    <input type="hidden" name="remit_id" value="<?php echo $remittance['remit_id']; ?>">
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="receipt_no" class="form-label">Receipt Number</label>
-                                                <input type="text" name="receipt_no" id="receipt_no" class="form-control" required>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="date_of_payment" class="form-label">Date of Payment</label>
-                                                <input type="date" name="date_of_payment" id="date_of_payment" class="form-control datepicker" value="<?php echo date('Y-m-d'); ?>" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="amount_paid" class="form-label">Amount Paid</label>
-                                                <input type="number" name="amount_paid" id="amount_paid" class="form-control" step="0.01" min="0" max="<?php echo $pendingAmount; ?>" required>
-                                                <small class="form-text text-muted">Maximum: <?php echo formatCurrency($pendingAmount); ?></small>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="payment_type" class="form-label">Payment Type</label>
-                                                <select name="payment_type" id="payment_type" class="form-select" required>
-                                                    <option value="cash">Cash</option>
-                                                    <option value="transfer">Bank Transfer</option>
-                                                    <option value="cheque">Cheque</option>
-                                                    <option value="pos">POS</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="income_line" class="form-label">Income Line</label>
-                                                <select name="income_line" id="income_line" class="form-select" required>
-                                                    <option value="">-- Select Income Line --</option>
-                                                    <?php foreach($incomeLines as $line): ?>
-                                                        <option value="<?php echo $line['acct_alias']; ?>"><?php echo $line['acct_desc']; ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="customer_name" class="form-label">Customer Name</label>
-                                                <input type="text" name="customer_name" id="customer_name" class="form-control">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Dynamic fields based on income line -->
-                                    <div id="shopRentFields" class="dynamic-fields" style="display: none;">
-                                        <h6 class="mt-3 mb-2">Shop Rent Details</h6>
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="shop_id" class="form-label">Shop ID</label>
-                                                    <input type="text" name="shop_id" id="shop_id" class="form-control">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="shop_no" class="form-label">Shop Number</label>
-                                                    <input type="text" name="shop_no" id="shop_no" class="form-control">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="shop_size" class="form-label">Shop Size</label>
-                                                    <input type="text" name="shop_size" id="shop_size" class="form-control">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="start_date" class="form-label">Start Date</label>
-                                                    <input type="date" name="start_date" id="start_date" class="form-control datepicker">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="end_date" class="form-label">End Date</label>
-                                                    <input type="date" name="end_date" id="end_date" class="form-control datepicker">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div id="serviceChargeFields" class="dynamic-fields" style="display: none;">
-                                        <h6 class="mt-3 mb-2">Service Charge Details</h6>
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="shop_id" class="form-label">Shop ID</label>
-                                                    <input type="text" name="shop_id" id="shop_id_sc" class="form-control">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="shop_no" class="form-label">Shop Number</label>
-                                                    <input type="text" name="shop_no" id="shop_no_sc" class="form-control">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="start_date" class="form-label">Month/Year</label>
-                                                    <input type="month" name="start_date" id="start_date_sc" class="form-control">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div id="ticketFields" class="dynamic-fields" style="display: none;">
-                                        <h6 class="mt-3 mb-2">Ticket Details</h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="no_of_tickets" class="form-label">Number of Tickets</label>
-                                                    <input type="number" name="no_of_tickets" id="no_of_tickets" class="form-control" min="1">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="plate_no" class="form-label">Plate Number (if applicable)</label>
-                                                    <input type="text" name="plate_no" id="plate_no" class="form-control">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-group mt-3">
-                                        <label for="transaction_desc" class="form-label">Transaction Description</label>
-                                        <textarea name="transaction_desc" id="transaction_desc" class="form-control" rows="3"></textarea>
-                                    </div>
-                                    
-                                    <div class="form-group mt-3">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save"></i> Post Transaction
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    <?php elseif($pendingReceipts > 0): ?>
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Post Transaction</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle"></i> It's past 6:30 PM. Please use the unposted transactions page to record any remaining transactions.
-                                    <a href="unposted_transactions.php" class="btn btn-primary btn-sm ml-3">
-                                        <i class="fas fa-receipt"></i> Go to Unposted Transactions
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <!-- Posted Transactions -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Posted Transactions</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover datatable">
-                                    <thead>
-                                        <tr>
-                                            <th>Receipt No</th>
-                                            <th>Date</th>
-                                            <th>Customer</th>
-                                            <th>Amount</th>
-                                            <th>Income Line</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if(!empty($transactions)): ?>
-                                            <?php foreach($transactions as $transaction): ?>
-                                                <tr>
-                                                    <td><?php echo $transaction['receipt_no']; ?></td>
-                                                    <td><?php echo formatDate($transaction['date_of_payment']); ?></td>
-                                                    <td><?php echo $transaction['customer_name']; ?></td>
-                                                    <td><?php echo formatCurrency($transaction['amount_paid']); ?></td>
-                                                    <td><?php echo $transaction['income_line']; ?></td>
-                                                    <td>
-                                                        <?php if($transaction['leasing_post_status'] == 'pending'): ?>
-                                                            <span class="badge badge-warning">Awaiting Approval</span>
-                                                        <?php elseif($transaction['leasing_post_status'] == 'approved'): ?>
-                                                            <span class="badge badge-success">Approved</span>
-                                                        <?php elseif($transaction['leasing_post_status'] == 'rejected'): ?>
-                                                            <span class="badge badge-danger">Rejected</span>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                    <td>
-                                                        <a href="view_transaction.php?id=<?php echo $transaction['id']; ?>" class="btn btn-sm btn-primary">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td colspan="7" class="text-center">No transactions posted yet</td>
-                                            </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                <?php endif; ?>
+                    <a href="dashboard.php" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                    </a>
+                    <a href="logout.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </div>
             </div>
         </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                Collection Posting Dashboard
+            </h1>
+            <p class="text-gray-600 text-lg">
+                Post and manage collections for <?= htmlspecialchars($userDepartment) ?> Department
+            </p>
+        </div>
+
+        <!-- Alert Messages -->
+        <?php if(!empty($success_msg)): ?>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span><?= $success_msg ?></span>
+                </div>
+            </div>
+        <?php endif; ?>
+        
+        <?php if(!empty($error_msg)): ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span><?= $error_msg ?></span>
+                </div>
+            </div>
+        <?php endif; ?>
+        
+        <?php if($is_after_cutoff): ?>
+            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-clock mr-2"></i>
+                        <span>Note: It's past 6:30 PM. New transactions must be recorded as unposted.</span>
+                    </div>
+                    <a href="unposted_transactions.php" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm">
+                        <i class="fas fa-receipt mr-1"></i> Record Unposted
+                    </a>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Quick Actions Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- New Remittance -->
+            <div class="bg-white rounded-xl shadow-lg p-6 card-hover transition-all duration-200">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-plus text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900">New Remittance</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Create a new remittance for collection posting</p>
+                <a href="remittance.php" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg inline-block text-center transition-colors">
+                    <i class="fas fa-money-bill-wave mr-2"></i>Create Remittance
+                </a>
+            </div>
+
+            <!-- Quick Post -->
+            <div class="bg-white rounded-xl shadow-lg p-6 card-hover transition-all duration-200">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-receipt text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900">Quick Post</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Quickly post a single transaction</p>
+                <button onclick="toggleQuickPost()" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-lightning-bolt mr-2"></i>Quick Post
+                </button>
+            </div>
+
+            <!-- View Reports -->
+            <div class="bg-white rounded-xl shadow-lg p-6 card-hover transition-all duration-200">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-chart-bar text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900">View Reports</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Access collection reports and analytics</p>
+                <a href="mpr.php" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg inline-block text-center transition-colors">
+                    <i class="fas fa-file-alt mr-2"></i>View Reports
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Post Form (Hidden by default) -->
+        <div id="quickPostForm" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Quick Post Transaction</h2>
+                <button onclick="toggleQuickPost()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form action="<?= $_SERVER['PHP_SELF'] ?>" method="POST" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <label for="remit_id" class="block text-sm font-medium text-gray-700 mb-2">Remittance ID</label>
+                        <select name="remit_id" id="remit_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="">-- Select Remittance --</option>
+                            <?php foreach($myRemittances as $remit): ?>
+                                <?php if(!$remittanceModel->isRemittanceFullyPosted($remit['remit_id'])): ?>
+                                    <option value="<?= $remit['remit_id'] ?>"><?= $remit['remit_id'] ?> - <?= formatCurrency($remit['amount_paid']) ?></option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="receipt_no" class="block text-sm font-medium text-gray-700 mb-2">Receipt Number</label>
+                        <input type="text" name="receipt_no" id="receipt_no" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    
+                    <div>
+                        <label for="date_of_payment" class="block text-sm font-medium text-gray-700 mb-2">Date of Payment</label>
+                        <input type="date" name="date_of_payment" id="date_of_payment" value="<?= date('Y-m-d') ?>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    
+                    <div>
+                        <label for="amount_paid" class="block text-sm font-medium text-gray-700 mb-2">Amount Paid</label>
+                        <input type="number" name="amount_paid" id="amount_paid" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    
+                    <div>
+                        <label for="payment_type" class="block text-sm font-medium text-gray-700 mb-2">Payment Type</label>
+                        <select name="payment_type" id="payment_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="cash">Cash</option>
+                            <option value="transfer">Bank Transfer</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="pos">POS</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="income_line" class="block text-sm font-medium text-gray-700 mb-2">Income Line</label>
+                        <select name="income_line" id="income_line" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="">-- Select Income Line --</option>
+                            <?php foreach($incomeLines as $line): ?>
+                                <option value="<?= $line['acct_alias'] ?>"><?= $line['acct_desc'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="md:col-span-2 lg:col-span-3">
+                        <label for="customer_name" class="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                        <input type="text" name="customer_name" id="customer_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <!-- Dynamic fields will be inserted here -->
+                <div id="dynamicFields"></div>
+                
+                <div>
+                    <label for="transaction_desc" class="block text-sm font-medium text-gray-700 mb-2">Transaction Description</label>
+                    <textarea name="transaction_desc" id="transaction_desc" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="toggleQuickPost()" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors">
+                        <i class="fas fa-save mr-2"></i>Post Transaction
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- My Remittances Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">My Remittances</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remit ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipts</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <?php if(!empty($myRemittances)): ?>
+                            <?php foreach($myRemittances as $remit): ?>
+                                <?php 
+                                    $isPosted = $remittanceModel->isRemittanceFullyPosted($remit['remit_id']);
+                                    $transactions = $transactionModel->getTransactionsByRemitId($remit['remit_id']);
+                                    $postedCount = count($transactions);
+                                    $pendingCount = $remit['no_of_receipts'] - $postedCount;
+                                ?>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= $remit['remit_id'] ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= formatDate($remit['date']) ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= formatCurrency($remit['amount_paid']) ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <span class="text-green-600"><?= $postedCount ?></span> / 
+                                        <span class="text-gray-500"><?= $remit['no_of_receipts'] ?></span>
+                                        <?php if($pendingCount > 0): ?>
+                                            <span class="text-orange-600">(<?= $pendingCount ?> pending)</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= $remit['category'] ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php if($isPosted): ?>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>Fully Posted
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-clock mr-1"></i>Pending Posts
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <?php if(!$isPosted && !$is_after_cutoff): ?>
+                                                <button onclick="loadRemittanceForPosting('<?= $remit['remit_id'] ?>')" class="text-blue-600 hover:text-blue-900">
+                                                    <i class="fas fa-receipt mr-1"></i>Post
+                                                </button>
+                                            <?php endif; ?>
+                                            <a href="view_remittance.php?id=<?= $remit['remit_id'] ?>" class="text-indigo-600 hover:text-indigo-900">
+                                                <i class="fas fa-eye mr-1"></i>View
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No remittances found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-6 border-t border-gray-200">
+            <p class="text-gray-600">&copy; 2024 Income ERP System - <?= htmlspecialchars($userDepartment) ?> Department. All rights reserved.</p>
+        </footer>
     </div>
-    
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="assets/js/main.js"></script>
-    
+
     <script>
+        function toggleQuickPost() {
+            const form = document.getElementById('quickPostForm');
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                form.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                form.classList.add('hidden');
+            }
+        }
+
+        function loadRemittanceForPosting(remitId) {
+            document.getElementById('remit_id').value = remitId;
+            toggleQuickPost();
+        }
+
         // Handle dynamic fields based on income line selection
         document.getElementById('income_line').addEventListener('change', function() {
-            // Hide all dynamic field sections
-            document.querySelectorAll('.dynamic-fields').forEach(function(element) {
-                element.style.display = 'none';
-            });
-            
-            // Show relevant fields based on selection
+            const dynamicFields = document.getElementById('dynamicFields');
             const selectedValue = this.value;
             
+            // Clear existing dynamic fields
+            dynamicFields.innerHTML = '';
+            
             if (selectedValue === 'Shop Rent') {
-                document.getElementById('shopRentFields').style.display = 'block';
+                dynamicFields.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <h3 class="md:col-span-2 lg:col-span-3 text-lg font-medium text-gray-900">Shop Rent Details</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Shop ID</label>
+                            <input type="text" name="shop_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Shop Number</label>
+                            <input type="text" name="shop_no" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Shop Size</label>
+                            <input type="text" name="shop_size" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="date" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" name="end_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                `;
             } else if (selectedValue === 'Service Charge') {
-                document.getElementById('serviceChargeFields').style.display = 'block';
+                dynamicFields.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <h3 class="md:col-span-2 lg:col-span-3 text-lg font-medium text-gray-900">Service Charge Details</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Shop ID</label>
+                            <input type="text" name="shop_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Shop Number</label>
+                            <input type="text" name="shop_no" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Month/Year</label>
+                            <input type="month" name="start_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                `;
             } else if (['Car Loading', 'Car Park', 'Hawkers', 'WheelBarrow', 'Abattoir', 'Daily Trade', 'POS Ticket'].includes(selectedValue)) {
-                document.getElementById('ticketFields').style.display = 'block';
+                dynamicFields.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <h3 class="md:col-span-2 text-lg font-medium text-gray-900">Ticket Details</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Tickets</label>
+                            <input type="number" name="no_of_tickets" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Plate Number (if applicable)</label>
+                            <input type="text" name="plate_no" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                `;
             }
+        });
+
+        // Add hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card-hover');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
         });
     </script>
 </body>
