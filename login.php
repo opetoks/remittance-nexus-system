@@ -37,12 +37,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $result = json_decode($response, true);
             
             if ($result['success']) {
-                // Set session variables
+                // Set comprehensive session variables
                 $_SESSION['user_id'] = $result['user']['id'];
                 $_SESSION['user_role'] = $result['role'];
                 $_SESSION['department'] = $result['staff']['department'];
                 $_SESSION['user_name'] = $result['user']['full_name'];
                 $_SESSION['user_email'] = $result['user']['email'];
+                $_SESSION['staff_id'] = $result['staff']['id'];
+                
+                // Set legacy session variables for compatibility
+                if ($result['role'] === 'admin') {
+                    $_SESSION['admin'] = $result['user']['id'];
+                } else {
+                    $_SESSION['staff'] = $result['user']['id'];
+                }
                 
                 // Flash success message
                 flash('login_success', 'Welcome back, ' . $result['user']['full_name'] . '!');

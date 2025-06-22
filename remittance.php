@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/config.php';
 require_once 'config/Database.php';
@@ -9,30 +8,18 @@ require_once 'helpers/session_helper.php';
 
 // Check if user is logged in and has proper role
 requireLogin();
-$userId = getLoggedInUserId();
 
-function requireAnyDepartment($departments = []) {
-    if (!isLoggedIn()) {
-        redirect('login.php');
-    }
+// Get user information from session instead of database queries
+$userId = $_SESSION['user_id'];
+$userRole = $_SESSION['user_role'];
+$userDepartment = $_SESSION['department'];
+$userName = $_SESSION['user_name'];
+$userEmail = $_SESSION['user_email'];
 
-    $userId = getLoggedInUserId();
-    
-    require_once 'config/Database.php';
-    $db = new Database();
-
-    $db->query('SELECT department FROM staffs WHERE user_id = :userId LIMIT 1');
-    $db->bind(':userId', $userId);
-    $result = $db->single();
-
-    $department = $result ? $result['department'] : null;
-
-    if (!in_array($department, $departments)) {
-        redirect('unauthorized.php');
-    }
+// Check if user has access to this page (Accounts or IT/E-Business department)
+if (!in_array($userDepartment, ['IT/E-Business', 'Accounts'])) {
+    redirect('unauthorized.php');
 }
-
-requireAnyDepartment(['IT/E-Business', 'Accounts']);
 
 // Initialize objects
 $db = new Database();
@@ -40,11 +27,8 @@ $user = new User();
 $remittanceModel = new Remittance();
 $transactionModel = new Transaction();
 
-// Get all leasing officers
+// Get all leasing officers (Wealth Creation department)
 $leasingOfficers = $user->getUsersByDepartment('Wealth Creation');
-// Get current user information
-$currentUser = $user->getUserById($userId);
-$userDepartment = $currentUser['department'];
 
 // Process form submission for new remittance
 $success_msg = $error_msg = '';
@@ -98,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     'category' => $category,
                     'remitting_officer_id' => $remitting_officer_id,
                     'remitting_officer_name' => $officer['full_name'],
-                    'posting_officer_id' => $_SESSION['user_id'],
-                    'posting_officer_name' => $_SESSION['user_name']
+                    'posting_officer_id' => $userId,
+                    'posting_officer_name' => $userName
                 ];
                 
                 $result = $remittanceModel->addRemittance($remittanceData);
@@ -126,10 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             
             if ($transaction) {
                 if ($action === 'approve_transaction') {
-                    $result = $transactionModel->approveTransaction($transaction_id, $_SESSION['user_id'], $_SESSION['user_name']);
+                    $result = $transactionModel->approveTransaction($transaction_id, $userId, $userName);
                     $success_msg = $result ? "Transaction approved successfully!" : "Error approving transaction.";
                 } else {
-                    $result = $transactionModel->rejectTransaction($transaction_id, 'account', $_SESSION['user_id'], $_SESSION['user_name']);
+                    $result = $transactionModel->rejectTransaction($transaction_id, 'account', $userId, $userName);
                     $success_msg = $result ? "Transaction rejected successfully." : "Error rejecting transaction.";
                 }
             }
@@ -145,10 +129,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             
             if ($transaction) {
                 if ($action === 'verify_transaction') {
-                    $result = $transactionModel->verifyTransaction($transaction_id, $_SESSION['user_id'], $_SESSION['user_name']);
+                    $result = $transactionModel->verifyTransaction($transaction_id, $userId, $userName);
                     $success_msg = $result ? "Transaction verified successfully!" : "Error verifying transaction.";
                 } else {
-                    $result = $transactionModel->rejectTransaction($transaction_id, 'verification', $_SESSION['user_id'], $_SESSION['user_name']);
+                    $result = $transactionModel->rejectTransaction($transaction_id, 'verification', $userId, $userName);
                     $success_msg = $result ? "Transaction verification rejected." : "Error rejecting verification.";
                 }
             }
@@ -205,7 +189,7 @@ $remittances = $remittanceModel->getRemittances();
                             <div class="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
                                 <i class="fas fa-user text-blue-600"></i>
                             </div>
-                            <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars($currentUser['full_name']) ?></span>
+                            <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars($userName) ?></span>
                         </div>
                         <a href="logout.php" class="text-gray-500 hover:text-gray-700">
                             <i class="fas fa-sign-out-alt"></i>

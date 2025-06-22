@@ -1,16 +1,9 @@
+
 <?php
 session_start();
-// print_r($_SESSION);
-// exit;
-// Start session if not already started
-// if (session_status() === PHP_SESSION_NONE) {
-//     session_name(SESSION_NAME);
-//     session_start();
-//     session_regenerate_id();
-// }
 
 function isLoggedIn() {
-    return (isset($_SESSION['admin']) || isset($_SESSION['staff']));
+    return (isset($_SESSION['user_id']) && !empty($_SESSION['user_id']));
 }
 
 // Redirect if not logged in
@@ -44,29 +37,24 @@ function flash($name = '', $message = '', $class = 'alert alert-success') {
 }
 
 function getLoggedInUserId() {
-    if (isset($_SESSION['admin'])) {
-        return $_SESSION['admin'];
-    } elseif (isset($_SESSION['staff'])) {
-        return $_SESSION['staff'];
+    if (isset($_SESSION['user_id'])) {
+        return $_SESSION['user_id'];
     } else {
         return null;
     }
 }
 
-$userId = getLoggedInUserId();
+function hasDepartment($dept) {
+    if (isset($_SESSION['department']) && $_SESSION['department'] === $dept) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 // Check user role
-// function hasRole($role) {
-//     if (isLoggedIn() && $_SESSION['user_role'] === $role) {
-//         return true;
-//     } else {
-//         return false;
-//     }
-// }
-
-function hasDepartment($dept) {
-    global $userDepartment;
-    if ($userDepartment === $dept) {
+function hasRole($role) {
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === $role) {
         return true;
     } else {
         return false;
@@ -75,7 +63,7 @@ function hasDepartment($dept) {
 
 // Redirect if not authorized for the role
 function requireRole($role) {
-    if (!isLoggedIn() || $_SESSION['user_role'] !== $role) {
+    if (!isLoggedIn() || !hasRole($role)) {
         redirect('unauthorized.php');
     }
 }
@@ -86,8 +74,6 @@ function requireAnyRole($roles = []) {
         redirect('unauthorized.php');
     }
 }
-
-
 
 // General redirect function
 function redirect($location) {
