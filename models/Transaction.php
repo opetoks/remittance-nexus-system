@@ -496,5 +496,217 @@ class Transaction {
         
         return $stats;
     }
+    
+    // Get transactions with pagination and filters for better performance
+    public function getTransactionsPaginated($page = 1, $limit = 25, $filters = []) {
+        $offset = ($page - 1) * $limit;
+        
+        // Build WHERE clause
+        $whereConditions = ['1=1'];
+        $params = [];
+        
+        if (!empty($filters['posting_officer_id'])) {
+            $whereConditions[] = 'posting_officer_id = :posting_officer_id';
+            $params[':posting_officer_id'] = $filters['posting_officer_id'];
+        }
+        
+        if (!empty($filters['date_from'])) {
+            $whereConditions[] = 'date_of_payment >= :date_from';
+            $params[':date_from'] = $filters['date_from'];
+        }
+        
+        if (!empty($filters['date_to'])) {
+            $whereConditions[] = 'date_of_payment <= :date_to';
+            $params[':date_to'] = $filters['date_to'];
+        }
+        
+        if (!empty($filters['income_line'])) {
+            $whereConditions[] = 'income_line = :income_line';
+            $params[':income_line'] = $filters['income_line'];
+        }
+        
+        if (!empty($filters['search'])) {
+            $whereConditions[] = '(receipt_no LIKE :search OR customer_name LIKE :search)';
+            $params[':search'] = '%' . $filters['search'] . '%';
+        }
+        
+        $whereClause = implode(' AND ', $whereConditions);
+        
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total FROM account_general_transaction_new WHERE $whereClause";
+        $this->db->query($countQuery);
+        foreach ($params as $key => $value) {
+            $this->db->bind($key, $value);
+        }
+        $totalResult = $this->db->single();
+        $total = $totalResult['total'];
+        
+        // Get paginated results
+        $query = "SELECT * FROM account_general_transaction_new WHERE $whereClause ORDER BY posting_time DESC LIMIT :limit OFFSET :offset";
+        $this->db->query($query);
+        foreach ($params as $key => $value) {
+            $this->db->bind($key, $value);
+        }
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
+        
+        $transactions = $this->db->resultSet();
+        
+        return [
+            'transactions' => $transactions,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit
+        ];
+    }
+    
+    // Get officer statistics for dashboard
+    public function getOfficerStats($officer_id) {
+        $stats = [];
+        
+        // Today's collections
+        $this->db->query('SELECT COUNT(*) as count, COALESCE(SUM(amount_paid), 0) as total FROM account_general_transaction_new WHERE posting_officer_id = :officer_id AND DATE(posting_time) = CURDATE()');
+        $this->db->bind(':officer_id', $officer_id);
+        $todayStats = $this->db->single();
+        $stats['today_count'] = $todayStats['count'];
+        $stats['today_amount'] = $todayStats['total'];
+        
+        // Pending approvals
+        $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE posting_officer_id = :officer_id AND (leasing_post_status = "pending" OR approval_status = "pending" OR verification_status = "pending")');
+        $this->db->bind(':officer_id', $officer_id);
+        $pendingStats = $this->db->single();
+        $stats['pending_count'] = $pendingStats['count'];
+        
+        // Total collections
+        $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE posting_officer_id = :officer_id');
+        $this->db->bind(':officer_id', $officer_id);
+        $totalStats = $this->db->single();
+        $stats['total_count'] = $totalStats['count'];
+        
+        return $stats;
+    }
+    
+    // Get income lines for dropdown
+    public function getIncomeLines() {
+        $this->db->query('SELECT DISTINCT income_line FROM account_general_transaction_new WHERE income_line IS NOT NULL ORDER BY income_line');
+        return $this->db->resultSet();
+    }
+    
+    // Get approval statistics for different levels
+    public function getApprovalStats($level) {
+        $stats = [];
+        
+        switch ($level) {
+            case 'accounts':
+                // Approved today
+                $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE approval_status = "approved" AND DATE(approval_time) = CURDATE()');
+                $approved = $this->db->single();
+                $stats['approved'] = $approved['count'];
+                
+                // Declined today
+                $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE approval_status = "rejected" AND DATE(approval_time) = CURDATE()');
+                $declined = $this->db->single();
+                $stats['declined'] = $declined['count'];
+                break;
+                
+            case 'audit':
+                // Verified today
+                $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE verification_status = "verified" AND DATE(verification_time) = CURDATE()');
+                $approved = $this->db->single();
+                $stats['approved'] = $approved['count'];
+                
+                // Rejected today
+                $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE verification_status = "rejected" AND DATE(verification_time) = CURDATE()');
+                $declined = $this->db->single();
+                $stats['declined'] = $declined['count'];
+                break;
+                
+            case 'fc':
+                // FC approved today
+                $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE fc_approval_status = "approved" AND DATE(fc_approval_time) = CURDATE()');
+                $approved = $this->db->single();
+                $stats['approved'] = $approved['count'];
+                
+                // FC declined today
+                $this->db->query('SELECT COUNT(*) as count FROM account_general_transaction_new WHERE fc_approval_status = "rejected" AND DATE(fc_approval_time) = CURDATE()');
+                $declined = $this->db->single();
+                $stats['declined'] = $declined['count'];
+                break;
+        }
+        
+        // Total processed today
+        $stats['total'] = ($stats['approved'] ?? 0) + ($stats['declined'] ?? 0);
+        
+        return $stats;
+    }
+    
+    // Get pending transactions for FC approval
+    public function getPendingTransactionsForFCApproval($limit = 500) {
+        $this->db->query('SELECT * FROM account_general_transaction_new WHERE verification_status = "verified" AND fc_approval_status = "pending" ORDER BY posting_time DESC LIMIT :limit');
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        return $this->db->resultSet();
+    }
+    
+    // FC approve transaction
+    public function fcApproveTransaction($transaction_id, $officer_id, $officer_name) {
+        $this->db->query('UPDATE account_general_transaction_new SET 
+            fc_approval_status = "approved", 
+            fc_approving_officer_id = :officer_id, 
+            fc_approving_officer_name = :officer_name, 
+            fc_approval_time = NOW() 
+        WHERE id = :id');
+        
+        $this->db->bind(':id', $transaction_id);
+        $this->db->bind(':officer_id', $officer_id);
+        $this->db->bind(':officer_name', $officer_name);
+        
+        return $this->db->execute();
+    }
+    
+    // Decline transaction with remarks
+    public function declineTransaction($transaction_id, $stage, $officer_id, $officer_name, $remarks = '') {
+        switch($stage) {
+            case 'accounts':
+                $sql = 'UPDATE account_general_transaction_new SET 
+                    approval_status = "rejected", 
+                    approving_acct_officer_id = :officer_id, 
+                    approving_acct_officer_name = :officer_name, 
+                    approval_time = NOW(),
+                    rejection_remarks = :remarks
+                WHERE id = :id';
+                break;
+                
+            case 'audit':
+                $sql = 'UPDATE account_general_transaction_new SET 
+                    verification_status = "rejected", 
+                    verifying_auditor_id = :officer_id, 
+                    verifying_auditor_name = :officer_name, 
+                    verification_time = NOW(),
+                    rejection_remarks = :remarks
+                WHERE id = :id';
+                break;
+                
+            case 'fc':
+                $sql = 'UPDATE account_general_transaction_new SET 
+                    fc_approval_status = "rejected", 
+                    fc_approving_officer_id = :officer_id, 
+                    fc_approving_officer_name = :officer_name, 
+                    fc_approval_time = NOW(),
+                    rejection_remarks = :remarks
+                WHERE id = :id';
+                break;
+                
+            default:
+                return false;
+        }
+        
+        $this->db->query($sql);
+        $this->db->bind(':id', $transaction_id);
+        $this->db->bind(':officer_id', $officer_id);
+        $this->db->bind(':officer_name', $officer_name);
+        $this->db->bind(':remarks', $remarks);
+        
+        return $this->db->execute();
+    }
 }
 ?>
