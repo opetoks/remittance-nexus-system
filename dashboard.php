@@ -339,6 +339,30 @@ $currentDeptFeatures = $departmentFeatures[$department] ?? ['admin' => false, 'f
                     </a>
                 </div>
             </div>
+
+            <!-- Officer Management for Wealth Creation -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-100 p-3 rounded-full mr-4">
+                        <i class="fas fa-users text-purple-600 text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900">Officer Management</h2>
+                </div>
+                <div class="space-y-3">
+                    <a href="officer_management.php" class="card-hover block bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-tie text-purple-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">View Officers & Assignments</span>
+                        </div>
+                    </a>
+                    <a href="officers.php" class="card-hover block bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-100 transition-all duration-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-store text-indigo-600 mr-3"></i>
+                            <span class="font-medium text-gray-900">Individual Officer Shops</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
             <?php endif; ?>
 
             <?php if($department === 'Audit/Inspections'): ?>
