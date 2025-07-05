@@ -57,9 +57,10 @@ $query = "SELECT
     income_line,
     DATE(date_of_payment) as payment_date,
     COUNT(*) as transaction_count,
-    SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END) as total_debit,
-    SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END) as total_credit,
-    SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE -amount END) as net_amount
+    SUM(amount_paid) as total_amount,
+    AVG(amount_paid) as avg_amount,
+    MAX(amount_paid) as max_amount,
+    MIN(amount_paid) as min_amount
 FROM account_general_transaction_new 
 WHERE date_of_payment BETWEEN :start_date AND :end_date";
 
@@ -73,7 +74,7 @@ if (!empty($income_line)) {
     $params[':income_line'] = $income_line;
 }
 
-$query .= " GROUP BY income_line, DATE(date_of_payment) ORDER BY payment_date DESC, net_amount DESC";
+$query .= " GROUP BY income_line, DATE(date_of_payment) ORDER BY payment_date DESC, total_amount DESC";
 
 $database->query($query);
 foreach($params as $param => $value) {
@@ -85,10 +86,10 @@ $performanceData = $database->resultSet();
 $summaryQuery = "SELECT 
     income_line,
     COUNT(*) as total_transactions,
-    SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE -amount END) as net_revenue,
-    AVG(CASE WHEN transaction_type = 'credit' THEN amount ELSE -amount END) as avg_amount,
-    MAX(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END) as max_amount,
-    MIN(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END) as min_amount
+    SUM(amount_paid) as total_revenue,
+    AVG(amount_paid) as avg_amount,
+    MAX(amount_paid) as max_amount,
+    MIN(amount_paid) as min_amount
 FROM account_general_transaction_new 
 WHERE date_of_payment BETWEEN :start_date AND :end_date";
 
@@ -96,7 +97,7 @@ if (!empty($income_line)) {
     $summaryQuery .= " AND income_line = :income_line";
 }
 
-$summaryQuery .= " GROUP BY income_line ORDER BY net_revenue DESC";
+$summaryQuery .= " GROUP BY income_line ORDER BY total_revenue DESC";
 
 $database->query($summaryQuery);
 foreach($params as $param => $value) {
@@ -107,12 +108,12 @@ $summaryStats = $database->resultSet();
 // Get top performing income lines
 $topPerformersQuery = "SELECT 
     income_line,
-    SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE -amount END) as net_revenue,
+    SUM(amount_paid) as total_revenue,
     COUNT(*) as transaction_count
 FROM account_general_transaction_new 
 WHERE date_of_payment BETWEEN :start_date AND :end_date
 GROUP BY income_line 
-ORDER BY net_revenue DESC 
+ORDER BY total_revenue DESC 
 LIMIT 10";
 
 $database->query($topPerformersQuery);
@@ -123,7 +124,7 @@ $topPerformers = $database->resultSet();
 // Get daily trends for chart
 $trendsQuery = "SELECT 
     DATE(date_of_payment) as trend_date,
-    SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE -amount END) as daily_revenue,
+    SUM(amount_paid) as daily_revenue,
     COUNT(*) as daily_transactions
 FROM account_general_transaction_new 
 WHERE date_of_payment BETWEEN :start_date AND :end_date";
@@ -141,7 +142,7 @@ foreach($params as $param => $value) {
 $trendsData = $database->resultSet();
 
 // Calculate overall totals
-$totalRevenue = array_sum(array_column($summaryStats, 'net_revenue'));
+$totalRevenue = array_sum(array_column($summaryStats, 'total_revenue'));
 $totalTransactions = array_sum(array_column($summaryStats, 'total_transactions'));
 $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) : 0;
 ?>
@@ -345,7 +346,7 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income Line</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Revenue</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Revenue</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transactions</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Amount</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Amount</th>
@@ -359,8 +360,8 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
                                     <?= htmlspecialchars($stat['income_line']) ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <span class="font-medium <?= $stat['net_revenue'] >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                        <?= formatCurrency($stat['net_revenue']) ?>
+                                    <span class="font-medium text-green-600">
+                                        <?= formatCurrency($stat['total_revenue']) ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -374,7 +375,7 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?php 
-                                    $performance = $totalRevenue > 0 ? ($stat['net_revenue'] / $totalRevenue) * 100 : 0;
+                                    $performance = $totalRevenue > 0 ? ($stat['total_revenue'] / $totalRevenue) * 100 : 0;
                                     $performanceClass = $performance >= 10 ? 'text-green-600' : ($performance >= 5 ? 'text-yellow-600' : 'text-red-600');
                                     ?>
                                     <span class="<?= $performanceClass ?> font-medium">
@@ -401,9 +402,9 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income Line</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transactions</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Credit</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Debit</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Amount</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -418,14 +419,14 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?= number_format($data['transaction_count']) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                                    <?= formatCurrency($data['total_credit']) ?>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                    <?= formatCurrency($data['total_amount']) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                                    <?= formatCurrency($data['total_debit']) ?>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <?= formatCurrency($data['avg_amount']) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium <?= $data['net_amount'] >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= formatCurrency($data['net_amount']) ?>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <?= formatCurrency($data['max_amount']) ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -500,7 +501,7 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
         // Top Performers Chart
         const topData = <?= json_encode($topPerformers) ?>;
         const topLabels = topData.slice(0, 8).map(item => item.income_line);
-        const topRevenue = topData.slice(0, 8).map(item => parseFloat(item.net_revenue));
+        const topRevenue = topData.slice(0, 8).map(item => parseFloat(item.total_revenue));
 
         const topCtx = document.getElementById('topPerformersChart').getContext('2d');
         new Chart(topCtx, {
@@ -508,7 +509,7 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
             data: {
                 labels: topLabels,
                 datasets: [{
-                    label: 'Net Revenue',
+                    label: 'Total Revenue',
                     data: topRevenue,
                     backgroundColor: [
                         'rgba(34, 197, 94, 0.8)',
