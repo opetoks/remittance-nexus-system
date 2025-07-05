@@ -1,4 +1,3 @@
-
 <?php
 require_once 'helpers/session_helper.php';
 require_once 'config/config.php';
@@ -440,6 +439,61 @@ $currentDeptFeatures = $departmentFeatures[$department] ?? ['admin' => false, 'f
                     </a>
                 </div>
             </div>
+        </div>
+
+        <!-- Quick Actions Grid - Add the Income Performance link here -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <!-- Post Collection -->
+            <a href="post_collections.php" class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Post Collection</h3>
+                        <p class="text-blue-100 text-sm">Record new income transactions</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                        <i class="fas fa-plus-circle text-2xl"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- View Transactions -->
+            <a href="transactions.php" class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">View Transactions</h3>
+                        <p class="text-green-100 text-sm">Browse all transactions</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                        <i class="fas fa-list text-2xl"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Officer Management -->
+            <a href="officer_management.php" class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Officer Management</h3>
+                        <p class="text-purple-100 text-sm">Manage officers and shops</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                        <i class="fas fa-users text-2xl"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Income Performance Analysis -->
+            <a href="income_performance_analysis.php" class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Income Analysis</h3>
+                        <p class="text-orange-100 text-sm">Performance insights & analytics</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                        <i class="fas fa-chart-bar text-2xl"></i>
+                    </div>
+                </div>
+            </a>
         </div>
 
         <!-- Recent Activity Section -->
