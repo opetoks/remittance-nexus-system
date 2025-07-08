@@ -1,4 +1,3 @@
-
 <?php
 
 class IncomeAnalysis {
@@ -64,6 +63,74 @@ class IncomeAnalysis {
         } catch (Exception $e) {
             throw new Exception('Error fetching daily analysis: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Get ledger data for a specific income line
+     */
+    public function getLedgerData($income_line, $from_date, $to_date) {
+        try {
+            // Get account details for this income line
+            $account = $this->getAccountByIncomeLine($income_line);
+            
+            if (!$account) {
+                throw new Exception('Account not found for income line: ' . $income_line);
+            }
+            
+            // Get transactions for this income line
+            $query = "SELECT 
+                        t.*,
+                        DATE_FORMAT(t.date_of_payment, '%d/%m/%Y') as formatted_date,
+                        DATE_FORMAT(t.date_on_receipt, '%d/%m/%Y') as formatted_receipt_date
+                      FROM account_general_transaction_new t
+                      WHERE t.income_line = :income_line 
+                      AND DATE(t.date_of_payment) BETWEEN :from_date AND :to_date
+                      ORDER BY t.date_of_payment ASC, t.posting_time ASC";
+                      
+            $this->db->query($query);
+            $this->db->bind(':income_line', $income_line);
+            $this->db->bind(':from_date', $from_date);
+            $this->db->bind(':to_date', $to_date);
+            $transactions = $this->db->resultSet();
+            
+            // Calculate running balance
+            $balance = 0;
+            foreach ($transactions as &$transaction) {
+                $balance += (float)$transaction['amount_paid'];
+                $transaction['balance'] = $balance;
+            }
+            
+            return [
+                'account' => $account,
+                'transactions' => $transactions,
+                'total_amount' => $balance
+            ];
+            
+        } catch (Exception $e) {
+            throw new Exception('Error fetching ledger data: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get account details by income line
+     */
+    private function getAccountByIncomeLine($income_line) {
+        $query = "SELECT * FROM accounts WHERE acct_desc = :income_line AND income_line = TRUE LIMIT 1";
+        $this->db->query($query);
+        $this->db->bind(':income_line', $income_line);
+        return $this->db->single();
+    }
+    
+    /**
+     * Get all income line accounts
+     */
+    public function getIncomeLineAccounts() {
+        $query = "SELECT acct_desc as income_line, acct_code, gl_code, acct_table_name 
+                  FROM accounts 
+                  WHERE income_line = TRUE AND active = TRUE 
+                  ORDER BY acct_desc ASC";
+        $this->db->query($query);
+        return $this->db->resultSet();
     }
     
     /**

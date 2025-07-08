@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/config.php';
 require_once 'config/Database.php';
@@ -204,6 +203,9 @@ function isSunday($day, $sundays) {
                             </a>
                             <a href="income_performance_analysis.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-chart-line mr-2"></i> Performance Analysis
+                            </a>
+                            <a href="income_ledger.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-book mr-2"></i> Income Ledger
                             </a>
                             <div class="border-t my-1"></div>
                             <a href="logout.php" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
