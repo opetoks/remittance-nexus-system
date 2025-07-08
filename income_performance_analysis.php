@@ -183,6 +183,9 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
                 </div>
                 
                 <div class="flex items-center gap-4">
+                    <a href="daily_income_analysis.php" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+                        <i class="fas fa-table mr-2"></i> Daily Analysis Table
+                    </a>
                     <div class="text-right">
                         <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($userName) ?></div>
                         <div class="text-xs text-gray-500"><?= htmlspecialchars($department) ?></div>
@@ -197,6 +200,9 @@ $avgDailyRevenue = count($trendsData) > 0 ? $totalRevenue / count($trendsData) :
                         <div id="userDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-2 hidden z-50">
                             <a href="dashboard.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                            </a>
+                            <a href="daily_income_analysis.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-table mr-2"></i> Daily Analysis
                             </a>
                             <a href="transactions.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-exchange-alt mr-2"></i> Transactions
