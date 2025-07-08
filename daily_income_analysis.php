@@ -160,6 +160,14 @@ function isSunday($day, $sundays) {
             z-index: 5;
             border-right: 2px solid #e5e7eb;
         }
+        .total-row {
+            background-color: #f3f4f6 !important;
+            font-weight: bold;
+        }
+        .total-column {
+            background-color: #f9fafb !important;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -311,8 +319,8 @@ function isSunday($day, $sundays) {
                                     <?= $is_sunday ? 'Sun' : 'Day' ?><br><?= str_pad($day, 2, '0', STR_PAD_LEFT) ?>
                                 </th>
                             <?php endfor; ?>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-100">
-                                Total
+                            <th class="total-column px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-100">
+                                Monthly Total
                             </th>
                         </tr>
                     </thead>
@@ -335,17 +343,17 @@ function isSunday($day, $sundays) {
                                     </td>
                                 <?php endfor; ?>
                                 
-                                <td class="amount-cell px-4 py-4 text-sm font-bold text-green-600 bg-gray-50">
+                                <td class="total-column amount-cell px-4 py-4 text-sm font-bold text-green-600 bg-gray-50">
                                     <?= number_format($line['total'], 0) ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                     
-                    <tfoot class="bg-gray-100 sticky bottom-0">
+                    <tfoot class="total-row bg-gray-100 sticky bottom-0">
                         <tr>
                             <th class="sticky-column px-6 py-4 text-left text-sm font-bold text-gray-900 bg-gray-100">
-                                TOTAL
+                                DAILY TOTAL
                             </th>
                             <?php for($day = 1; $day <= $days_in_month; $day++): ?>
                                 <?php 
