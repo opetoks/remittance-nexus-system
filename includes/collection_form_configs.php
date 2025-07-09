@@ -39,13 +39,20 @@ return [
         ]
     ],
     'Car Loading' => [
-        'fields' => ['plate_no', 'no_of_tickets'],
+        'fields' => ['no_of_tickets', 'transaction_descr', 'remitting_staff', 'remit_id'],
         'has_fixed_price' => true,
         'prices' => [200, 300, 500],
-        'required_fields' => ['no_of_tickets'],
+        'required_fields' => ['no_of_tickets', 'remitting_staff'],
         'field_types' => [
-            'plate_no' => 'text',
-            'no_of_tickets' => 'number'
+            'no_of_tickets' => 'number',
+            'transaction_descr' => 'text',
+            'remitting_staff' => 'select',
+            'remit_id' => 'select'
+        ],
+        'readonly_fields' => ['transaction_descr', 'amount_paid'],
+        'select_options' => [
+            'remitting_staff' => 'dynamic_staff', // This will be populated dynamically
+            'remit_id' => 'dynamic_remittance' // This will be populated dynamically
         ]
     ],
     'Car Park Ticket' => [

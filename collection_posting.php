@@ -1,4 +1,3 @@
-
 <?php
 require_once 'config/config.php';
 require_once 'config/Database.php';
@@ -59,11 +58,17 @@ if ($isLeasingOfficer) {
     $pendingAmount = $totalRemitted - $totalPosted;
 }
 
-// Get debit accounts for accounts officers
-$debitAccounts = [];
-if ($isAccountsOfficer) {
-    $debitAccounts = $accountModel->getDebitAccounts(); // You may need to implement this method
-}
+// Get staff for remitting staff dropdown
+$staffQuery = "SELECT user_id, full_name FROM staffs WHERE department = 'Wealth Creation' ORDER BY full_name ASC";
+$db->query($staffQuery);
+$wealthCreationStaff = $db->resultSet();
+
+$otherStaffQuery = "SELECT id, full_name, department FROM staffs_others ORDER BY full_name ASC";
+$db->query($otherStaffQuery);
+$otherStaff = $db->resultSet();
+
+// Load form configurations
+$formConfigs = include 'includes/collection_form_configs.php';
 
 // Include the header and form components
 ?>
@@ -201,54 +206,21 @@ if ($isAccountsOfficer) {
         let selectedIncomeLine = null;
         let selectedTableName = null;
         const isAccountsOfficer = <?= $isAccountsOfficer ? 'true' : 'false' ?>;
+        const isLeasingOfficer = <?= $isLeasingOfficer ? 'true' : 'false' ?>;
+        const currentUserId = <?= $userId ?>;
+        const currentUserName = '<?= htmlspecialchars($userName) ?>';
+        const currentUserDept = '<?= htmlspecialchars($userDepartment) ?>';
+        
+        // Staff data for Car Loading
+        const wealthCreationStaff = <?= json_encode($wealthCreationStaff) ?>;
+        const otherStaff = <?= json_encode($otherStaff) ?>;
+        
+        // Remittance data for leasing officers
+        const myRemittances = <?= $isLeasingOfficer ? json_encode($myRemittances) : '[]' ?>;
+        const pendingAmount = <?= $pendingAmount ?>;
         
         // Income line configurations
-        const incomeLineConfigs = {
-            'General': {
-                fields: ['customer_name', 'description'],
-                hasFixedPrice: false
-            },
-            'Shop Rent': {
-                fields: ['shop_id', 'shop_no', 'shop_size', 'start_date', 'end_date'],
-                hasFixedPrice: true,
-                prices: [5000, 7500, 10000, 15000, 20000]
-            },
-            'Service Charge': {
-                fields: ['shop_id', 'shop_no', 'month_year'],
-                hasFixedPrice: true,
-                prices: [500, 750, 1000]
-            },
-            'Car Loading': {
-                fields: ['plate_no', 'no_of_tickets'],
-                hasFixedPrice: true,
-                prices: [200, 300, 500]
-            },
-            'Car Park Ticket': {
-                fields: ['plate_no', 'no_of_tickets'],
-                hasFixedPrice: true,
-                prices: [100, 200]
-            },
-            'Hawkers Ticket': {
-                fields: ['no_of_tickets', 'location'],
-                hasFixedPrice: true,
-                prices: [50, 100]
-            },
-            'WheelBarrow Ticket': {
-                fields: ['no_of_tickets'],
-                hasFixedPrice: true,
-                prices: [50]
-            },
-            'Daily Trade': {
-                fields: ['no_of_tickets', 'trade_type'],
-                hasFixedPrice: true,
-                prices: [100, 200, 300]
-            },
-            'Abattoir': {
-                fields: ['animal_type', 'no_of_animals'],
-                hasFixedPrice: true,
-                prices: [500, 1000, 1500]
-            }
-        };
+        const incomeLineConfigs = <?= json_encode($formConfigs) ?>;
 
         function selectIncomeLine(alias, description, tableName) {
             selectedIncomeLine = alias;
@@ -275,36 +247,116 @@ if ($isAccountsOfficer) {
                 <h3 class="text-xl font-bold text-gray-900 mb-6">${description} Payment Form</h3>
                 <form id="paymentSubmissionForm" onsubmit="submitPayment(event)">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Basic Fields -->
+                        <!-- Receipt Number -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Receipt Number</label>
-                            <input type="text" name="receipt_no" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" name="receipt_no" required maxlength="7" pattern="^\\d{7}$" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="7-digit receipt number">
                         </div>
                         
+                        <!-- Date of Payment -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Date of Payment</label>
-                            <input type="date" name="date_of_payment" value="${new Date().toISOString().split('T')[0]}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="date" name="date_of_payment" value="${new Date().toISOString().split('T')[0]}" required 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
             `;
 
-            // Add amount field with fixed price options if applicable
-            if (config.hasFixedPrice) {
+            // Add specific fields for Car Loading
+            if (alias === 'Car Loading') {
+                // Transaction Description
                 formHTML += `
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Transaction Description</label>
+                        <input type="text" name="transaction_descr" readonly 
+                               value="Car Loading Payment" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none">
+                    </div>
+                    
+                    <!-- Number of Tickets -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                        <select name="amount_paid" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select Amount</option>
-                            ${config.prices.map(price => `<option value="${price}">₦${price.toLocaleString()}</option>`).join('')}
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Number of Tickets</label>
+                        <input type="number" name="no_of_tickets" id="no_of_tickets" required min="1" max="9999"
+                               onchange="calculateAmount()"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Enter number of tickets">
+                    </div>
+                    
+                    <!-- Amount -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Amount Remitted (₦)</label>
+                        <input type="text" name="amount_paid" id="amount_paid" readonly 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none">
+                    </div>
+                    
+                    <!-- Remitting Staff -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Remitter's Name</label>
+                        <select name="remitting_staff" required 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Remitter...</option>
+                `;
+                
+                // Add Wealth Creation staff
+                wealthCreationStaff.forEach(staff => {
+                    formHTML += `<option value="${staff.user_id}-wc">${staff.full_name}</option>`;
+                });
+                
+                // Add other staff
+                otherStaff.forEach(staff => {
+                    formHTML += `<option value="${staff.id}-so">${staff.full_name} - ${staff.department}</option>`;
+                });
+                
+                formHTML += `
                         </select>
                     </div>
                 `;
+                
+                // Add remittance selection for leasing officers
+                if (isLeasingOfficer) {
+                    formHTML += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Remittances</label>
+                            <select name="remit_id" required 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Remittance...</option>
+                    `;
+                    
+                    // Add today's remittances
+                    const today = new Date().toISOString().split('T')[0];
+                    myRemittances.forEach(remit => {
+                        const remitDate = new Date(remit.date).toISOString().split('T')[0];
+                        if (remitDate === today) {
+                            formHTML += `<option value="${remit.remit_id}">${remit.date}: Remittance - ₦${parseFloat(remit.amount_paid).toLocaleString()}</option>`;
+                        }
+                    });
+                    
+                    formHTML += `
+                            </select>
+                        </div>
+                    `;
+                }
             } else {
-                formHTML += `
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                        <input type="number" name="amount_paid" step="0.01" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                `;
+                // Regular amount field for other income lines
+                if (config.has_fixed_price) {
+                    formHTML += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                            <select name="amount_paid" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Amount</option>
+                                ${config.prices.map(price => `<option value="${price}">₦${price.toLocaleString()}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                } else {
+                    formHTML += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                            <input type="number" name="amount_paid" step="0.01" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    `;
+                }
             }
 
             // Add payment type
@@ -341,8 +393,8 @@ if ($isAccountsOfficer) {
 
             formHTML += `</div>`;
 
-            // Add specific fields based on income line
-            if (config.fields && config.fields.length > 0) {
+            // Add other fields for non-Car Loading income lines
+            if (alias !== 'Car Loading' && config.fields && config.fields.length > 0) {
                 formHTML += `
                     <div class="mt-6">
                         <h4 class="text-lg font-medium text-gray-900 mb-4">Additional Details</h4>
@@ -396,7 +448,11 @@ if ($isAccountsOfficer) {
                     </button>
                 </div>
                 
+                <!-- Hidden Fields -->
+                <input type="hidden" name="posting_officer_id" value="${currentUserId}">
+                <input type="hidden" name="posting_officer_name" value="${currentUserName}">
                 <input type="hidden" name="income_line" value="${alias}">
+                <input type="hidden" name="posting_officer_dept" value="${currentUserDept}">
                 <input type="hidden" name="table_name" value="${selectedTableName}">
             </form>
             `;
@@ -404,6 +460,18 @@ if ($isAccountsOfficer) {
             formContainer.innerHTML = formHTML;
             document.getElementById('paymentForm').classList.remove('hidden');
             document.getElementById('paymentForm').classList.add('fade-in');
+        }
+
+        // Calculate amount for Car Loading based on number of tickets
+        function calculateAmount() {
+            const tickets = document.getElementById('no_of_tickets')?.value;
+            const amountField = document.getElementById('amount_paid');
+            
+            if (tickets && amountField && selectedIncomeLine === 'Car Loading') {
+                // Assuming 200 per ticket for Car Loading
+                const amount = parseInt(tickets) * 200;
+                amountField.value = amount.toLocaleString();
+            }
         }
 
         async function submitPayment(event) {
@@ -429,7 +497,7 @@ if ($isAccountsOfficer) {
                     event.target.reset();
                     
                     // Update remittance summary if leasing officer
-                    if (!isAccountsOfficer) {
+                    if (isLeasingOfficer) {
                         setTimeout(() => {
                             location.reload();
                         }, 2000);
