@@ -279,6 +279,103 @@ function loadForm(line, department) {
             <input type="text" id="amount_paid" name="amount_paid" class="w-full p-2 border rounded bg-gray-100" onBlur="loadCalc()" readonly />
             </div>
         `;
+    } else if (line === 'Abattoir') {
+        extraFields = `
+            <div class="mb-3">
+            <label class="block font-medium">Category</label>
+            <select name="category" id="category" class="w-full p-2 border rounded" onBlur="loadCalc()" required>
+                <option value="">Select a category</option>
+                <option value="Cows Killed">Cows Killed</option>
+                <option value="Cows Takeaway">Cows Takeaway</option>
+                <option value="Goats Killed">Goats Killed</option>
+                <option value="Goats Takeaway">Goats Takeaway</option>
+                <option value="Pots of Pomo">Pots of Pomo</option>
+            </select>
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Quantity</label>
+            <input type="number" name="quantity" id="quantity" placeholder="Quantity" class="w-full p-2 border rounded" onBlur="loadCalc()" required />
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Receipt No</label>
+            <input type="text" name="receipt_no" placeholder="Receipt No" class="w-full p-2 border rounded" maxlength="7" pattern="^\\d{7}$" required />
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Amount Remitted</label>
+            <input type="text" id="amount_paid" name="amount_paid" class="w-full p-2 border rounded bg-gray-100" readonly />
+            </div>
+        `;
+    } else if (line === 'Car Park Ticket') {
+        extraFields = `
+            <div class="mb-3">
+            <label class="block font-medium">Category</label>
+            <select name="category" id="category" class="w-full p-2 border rounded" required>
+                <option value="">Select a category</option>
+                <option value="Car Park 1 (Alpha 1)">Car Park 1 (Alpha 1)</option>
+                <option value="Car Park 2 (Alpha 2)">Car Park 2 (Alpha 2)</option>
+            </select>
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Ticket Category</label>
+            <select name="ticket_category" id="ticket_category" class="w-full p-2 border rounded" onBlur="loadCalc()" required>
+                <option value="500">₦500</option>
+                <option value="700">₦700</option>
+            </select>
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">No of Tickets</label>
+            <input type="number" name="no_of_tickets" id="no_of_tickets" placeholder="No of Tickets" class="w-full p-2 border rounded" onBlur="loadCalc()" required />
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Receipt No</label>
+            <input type="text" name="receipt_no" placeholder="Receipt No" class="w-full p-2 border rounded" maxlength="7" pattern="^\\d{7}$" required />
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Amount Remitted</label>
+            <input type="text" id="amount_paid" name="amount_paid" class="w-full p-2 border rounded bg-gray-100" readonly />
+            </div>
+        `;
+    } else if (line === 'Hawkers Ticket') {
+        extraFields = `
+            <div class="mb-3">
+            <label class="block font-medium">Ticket Category</label>
+            <select name="ticket_category" id="ticket_category" class="w-full p-2 border rounded" onBlur="loadCalc()" required>
+                <option value="300">₦300</option>
+                <option value="500">₦500</option>
+                <option value="700">₦700</option>
+            </select>
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Receipt No</label>
+            <input type="text" name="receipt_no" placeholder="Receipt No" class="w-full p-2 border rounded" maxlength="7" pattern="^\\d{7}$" required />
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">No of Tickets</label>
+            <input type="number" name="no_of_tickets" id="no_of_tickets" placeholder="No of Tickets" class="w-full p-2 border rounded" onBlur="loadCalc()" required />
+            </div>
+
+            <div class="mb-3">
+            <label class="block font-medium">Amount Remitted</label>
+            <input type="text" id="amount_paid" name="amount_paid" class="w-full p-2 border rounded bg-gray-100" readonly />
+            </div>
+        `;
+    }
+
+    // Now render the appropriate form
+    if (line === 'Car Loading Ticket' || line === 'Abattoir' || line === 'Car Park Ticket' || line === 'Hawkers Ticket') {
+        const transactionDesc = line === 'Car Loading Ticket' ? 'Car Loading Fee Payment' : 
+                               line === 'Abattoir' ? 'Abattoir Service Payment' :
+                               line === 'Car Park Ticket' ? 'Car Park Ticket Payment' :
+                               'Hawkers Ticket Payment';
 
         formArea.innerHTML = `
             <div class="bg-white p-6 rounded shadow mt-4 text-sm">
@@ -293,10 +390,9 @@ function loadForm(line, department) {
 
                 ${remittanceDropdown}
 
-                <!-- Custom fields for Car Loading -->
                 <div class="mb-3">
                 <label class="block font-medium">Transaction Description</label>
-                <input type="text" name="transaction_descr" class="w-full p-2 border rounded bg-gray-100" value="Car Loading Fee Payment" readonly />
+                <input type="text" name="transaction_descr" class="w-full p-2 border rounded bg-gray-100" value="${transactionDesc}" readonly />
                 </div>
                 
                 ${extraFields}
@@ -328,12 +424,12 @@ function loadForm(line, department) {
                 ` : ''}
 
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                Submit Car Loading Payment
+                Submit ${line} Payment
                 </button>
             </form>
             </div>
         `;
-        } else {
+    } else {
         // Default generic form
         formArea.innerHTML = `
             <div class="bg-white p-6 rounded shadow mt-4">
@@ -383,48 +479,81 @@ function loadForm(line, department) {
             </form>
             </div>
         `;
-        }
+    }
     }
 
 function loadCalc() {
     const ticketsInput = document.getElementById('no_of_tickets');
+    const quantityInput = document.getElementById('quantity');
+    const categoryInput = document.getElementById('category');
+    const ticketCategoryInput = document.getElementById('ticket_category');
     const incomeLineInput = document.querySelector("input[name='income_line']");
     
-    if (!ticketsInput || !incomeLineInput) {
-        console.log('Required elements not found');
+    if (!incomeLineInput) {
+        console.log('Income line input not found');
         return;
     }
 
-    const no_of_ticket = parseFloat(ticketsInput.value) || 0;
     const incomeLine = incomeLineInput.value;
+    let totalAmount = 0;
     
-    console.log('Number of tickets:', no_of_ticket);
     console.log('Income line:', incomeLine);
     
-    let unitPrice = 0;
-    
-    // Set unit price based on income line
     if (incomeLine === 'Car Loading Ticket') {
-        unitPrice = 1000;
+        if (!ticketsInput) return;
+        const no_of_tickets = parseFloat(ticketsInput.value) || 0;
+        totalAmount = no_of_tickets * 1000;
+        
     } else if (incomeLine === 'Hawkers Ticket') {
-        unitPrice = 300;
-    } else if (incomeLine === 'WheelBarrow Ticket') {
-        unitPrice = 100;
+        if (!ticketsInput || !ticketCategoryInput) return;
+        const no_of_tickets = parseFloat(ticketsInput.value) || 0;
+        const unitPrice = parseFloat(ticketCategoryInput.value) || 0;
+        totalAmount = no_of_tickets * unitPrice;
+        
     } else if (incomeLine === 'Car Park Ticket') {
-        unitPrice = 200;
-    } else if (incomeLine === 'Daily Trade') {
-        unitPrice = 500;
+        if (!ticketsInput || !ticketCategoryInput) return;
+        const no_of_tickets = parseFloat(ticketsInput.value) || 0;
+        const unitPrice = parseFloat(ticketCategoryInput.value) || 0;
+        totalAmount = no_of_tickets * unitPrice;
+        
+    } else if (incomeLine === 'Abattoir') {
+        if (!quantityInput || !categoryInput) return;
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const category = categoryInput.value;
+        
+        // Set prices based on category
+        let unitPrice = 0;
+        switch(category) {
+            case 'Cows Killed':
+                unitPrice = 2000;
+                break;
+            case 'Cows Takeaway':
+                unitPrice = 1500;
+                break;
+            case 'Goats Killed':
+                unitPrice = 1000;
+                break;
+            case 'Goats Takeaway':
+                unitPrice = 800;
+                break;
+            case 'Pots of Pomo':
+                unitPrice = 500;
+                break;
+            default:
+                unitPrice = 0;
+        }
+        totalAmount = quantity * unitPrice;
+        
     } else {
-        console.log('No unit price defined for this income line');
+        console.log('No calculation defined for this income line');
         return;
     }
 
-    const total_ticket_amount = no_of_ticket * unitPrice;
-    console.log('Total amount:', total_ticket_amount);
+    console.log('Total amount:', totalAmount);
 
     const amountField = document.getElementById('amount_paid');
     if (amountField) {
-        amountField.value = total_ticket_amount;
+        amountField.value = totalAmount;
     }
 }
 
