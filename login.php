@@ -1,72 +1,68 @@
-
 <?php
-require_once 'helpers/session_helper.php';
-require_once 'config/config.php';
+session_start();
+require_once 'config/Database.php';
 
 // Redirect if already logged in
-if (isLoggedIn()) {
-    redirect('dashboard.php');
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    header('Location: dashboard.php');
+    exit;
 }
 
 $error = '';
+$success = '';
+
+// Check for logout message
+if (isset($_GET['logout']) && $_GET['logout'] == 'success') {
+    $success = 'You have been logged out successfully.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = trim($_POST['email']);
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
-    
-    if (empty($email) || empty($password)) {
-        $error = 'Please enter both email and password.';
+
+    if (empty($username) || empty($password)) {
+        $error = 'Please enter both username and password.';
     } else {
-        // Call the login API
-        $loginData = json_encode(['email' => $email, 'password' => $password]);
-        
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => APP_URL . '/api/auth/login.php',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $loginData,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        ]);
-        
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-        
-        if ($response && $httpCode == 200) {
-            $result = json_decode($response, true);
-            
-            if ($result['success']) {
-                // Set comprehensive session variables
-                $_SESSION['user_id'] = $result['user']['id'];
-                $_SESSION['user_role'] = $result['role'];
-                $_SESSION['department'] = $result['staff']['department'];
-                $_SESSION['user_name'] = $result['user']['full_name'];
-                $_SESSION['user_email'] = $result['user']['email'];
-                $_SESSION['staff_id'] = $result['staff']['id'];
-                
-                // Set legacy session variables for compatibility
-                if ($result['role'] === 'admin') {
-                    $_SESSION['admin'] = $result['user']['id'];
-                } else {
-                    $_SESSION['staff'] = $result['user']['id'];
-                }
-                
-                // Flash success message
-                flash('login_success', 'Welcome back, ' . $result['user']['full_name'] . '!');
-                
+        try {
+            $db = new Database();
+
+            // Query user by username or email
+            $db->query('SELECT * FROM users WHERE (username = :username OR email = :username) AND is_active = 1');
+            $db->bind(':username', $username);
+            $user = $db->single();
+
+            if ($user && password_verify($password, $user['password'])) {
+                // Password is correct - set session variables
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['user_name'] = $user['full_name'];
+                $_SESSION['user_email'] = $user['email'];
+                $_SESSION['user_role'] = $user['role'];
+                $_SESSION['department'] = $user['department'];
+                $_SESSION['employee_id'] = $user['employee_id'];
+                $_SESSION['logged_in'] = true;
+                $_SESSION['login_time'] = time();
+
+                // Update last login time
+                $db->query('UPDATE users SET last_login = NOW() WHERE id = :user_id');
+                $db->bind(':user_id', $user['id']);
+                $db->execute();
+
                 // Redirect to dashboard
-                redirect('dashboard.php');
+                header('Location: dashboard.php');
+                exit;
+
             } else {
-                $error = $result['message'] ?? 'Invalid credentials. Please try again.';
+                $error = 'Invalid username or password. Please try again.';
             }
-        } else {
-            $error = 'Login service unavailable. Please try again later.';
+
+        } catch (Exception $e) {
+            $error = 'Login error. Please contact system administrator.';
+            error_log('Login error: ' . $e->getMessage());
         }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,29 +73,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #06b6d4 100%);
         }
         .login-card {
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        .input-icon {
+            pointer-events: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
-    <div class="login-card w-full max-w-md rounded-2xl shadow-2xl p-8">
+    <div class="login-card w-full max-w-md rounded-2xl shadow-2xl p-8 animate-fade-in">
         <!-- Header -->
         <div class="text-center mb-8">
             <div class="flex justify-center items-center gap-3 mb-4">
-                <i class="fas fa-chart-line text-4xl text-blue-600"></i>
-                <span class="text-3xl font-bold text-gray-900">Income ERP</span>
+                <div class="bg-blue-100 p-3 rounded-full">
+                    <i class="fas fa-chart-line text-4xl text-blue-600"></i>
+                </div>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p class="text-gray-600">Sign in to your account to continue</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Income ERP System</h1>
+            <p class="text-gray-600">Sign in to your account</p>
         </div>
+
+        <!-- Success Alert -->
+        <?php if (!empty($success)): ?>
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 animate-fade-in">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span><?= htmlspecialchars($success) ?></span>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Error Alert -->
         <?php if (!empty($error)): ?>
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 animate-fade-in">
                 <div class="flex items-center">
                     <i class="fas fa-exclamation-triangle mr-2"></i>
                     <span><?= htmlspecialchars($error) ?></span>
@@ -107,32 +124,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
         <?php endif; ?>
 
-        <!-- Flash Messages -->
-        <?php flash('login_success'); ?>
-
         <!-- Login Form -->
-        <form method="POST" action="<?= $_SERVER['PHP_SELF'] ?>" class="space-y-6">
+        <form method="POST" action="<?= htmlspecialchars($_SERVER['PHP_SELF']) ?>" class="space-y-6">
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-user mr-1"></i> Username or Email
                 </label>
                 <div class="relative">
                     <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>"
-                        placeholder="Enter your email"
+                        type="text"
+                        id="username"
+                        name="username"
+                        value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>"
+                        placeholder="Enter your username or email"
                         required
-                        class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        autofocus
+                        class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     >
-                    <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 input-icon"></i>
                 </div>
             </div>
 
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                    Password
+                    <i class="fas fa-lock mr-1"></i> Password
                 </label>
                 <div class="relative">
                     <input
@@ -141,13 +156,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         name="password"
                         placeholder="Enter your password"
                         required
-                        class="w-full px-4 py-3 pl-11 pr-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        class="w-full px-4 py-3 pl-11 pr-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     >
-                    <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 input-icon"></i>
                     <button
                         type="button"
                         onclick="togglePassword()"
-                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        tabindex="-1"
                     >
                         <i id="toggleIcon" class="fas fa-eye"></i>
                     </button>
@@ -156,26 +172,57 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             <button
                 type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center shadow-lg hover:shadow-xl"
             >
                 <i class="fas fa-sign-in-alt mr-2"></i>
                 Sign In
             </button>
         </form>
 
-        <!-- Demo Credentials -->
-        <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-            <p class="text-sm text-gray-600 text-center">
-                <strong>Demo Credentials:</strong><br>
-                Email: john@example.com<br>
-                Password: admin123
+        <!-- Demo Credentials Info -->
+        <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <p class="text-sm text-blue-900 text-center font-medium mb-2">
+                <i class="fas fa-info-circle mr-1"></i> Demo Credentials
             </p>
+            <div class="grid grid-cols-1 gap-2 text-sm text-blue-800">
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">Leasing Officer:</span>
+                    <span class="font-mono">leasing1 / password123</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">Account Officer:</span>
+                    <span class="font-mono">account1 / password123</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">Auditor:</span>
+                    <span class="font-mono">auditor1 / password123</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="mt-8 grid grid-cols-3 gap-4 text-center">
+            <div class="p-3">
+                <i class="fas fa-shield-alt text-2xl text-blue-600 mb-2"></i>
+                <p class="text-xs text-gray-600">Secure</p>
+            </div>
+            <div class="p-3">
+                <i class="fas fa-chart-bar text-2xl text-blue-600 mb-2"></i>
+                <p class="text-xs text-gray-600">Reports</p>
+            </div>
+            <div class="p-3">
+                <i class="fas fa-clock text-2xl text-blue-600 mb-2"></i>
+                <p class="text-xs text-gray-600">Real-time</p>
+            </div>
         </div>
 
         <!-- Footer -->
         <div class="mt-8 text-center">
             <p class="text-sm text-gray-500">
-                &copy; 2024 Income ERP System. All rights reserved.
+                International Standard Accounting System
+            </p>
+            <p class="text-xs text-gray-400 mt-2">
+                &copy; <?= date('Y') ?> Income ERP System. All rights reserved.
             </p>
         </div>
     </div>
@@ -184,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         function togglePassword() {
             const passwordField = document.getElementById('password');
             const toggleIcon = document.getElementById('toggleIcon');
-            
+
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
                 toggleIcon.className = 'fas fa-eye-slash';
@@ -194,15 +241,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
 
-        // Auto-hide flash messages after 5 seconds
-        setTimeout(() => {
-            const flashMsg = document.getElementById('msg-flash');
-            if (flashMsg) {
-                flashMsg.style.transition = 'opacity 0.5s';
-                flashMsg.style.opacity = '0';
-                setTimeout(() => flashMsg.remove(), 500);
+        // Add Enter key support
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.target.form.submit();
             }
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.bg-green-50, .bg-red-50');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s, transform 0.5s';
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                setTimeout(() => alert.remove(), 500);
+            });
         }, 5000);
+
+        // Prevent back button after logout
+        if (window.location.search.includes('logout=success')) {
+            if (window.history && window.history.pushState) {
+                window.history.pushState(null, null, window.location.pathname);
+            }
+        }
     </script>
 </body>
 </html>
